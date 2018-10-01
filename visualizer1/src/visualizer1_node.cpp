@@ -6,6 +6,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
+#include <image_transport/image_transport.h>
 #include <time.h>
 #include <ctime>
 #include <stdio.h>
@@ -16,22 +17,116 @@
 using namespace std;
 using namespace cv;
 
-// Currently published images. Need to change is to it publishes average x,y vector of all countour midpoints.
-// This info goes to another node which calculates it into understandable commands for the controllers.
 
-int main(int argc, char **argv)
-{   
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class visuals{
+
+protected:
+ros::NodeHandle nh_;
+image_transport::ImageTransport it_;
+image_transport::Subscriber sub;
+image_transport::Publisher image_pub;
+
+public:
+    Mat frame;
     
-    // OPEN CAMERA
+    visuals(ros::NodeHandle &nh_ , ros::NodeHandle &private_)
+        : it_(nh_)
+    {
+    sub = it_.subscribe("/stereo_camera/left/image_raw", 1, &visuals::imgcb, this); 
+    }
 
-    VideoCapture cap(0); // open the default camera
-    if(!cap.isOpened())  // check if we succeeded
-        return -1;
+    ~visuals()
+    {
+        destroyWindow("Contour");
+    }
 
-    Mat frame; // RGB PIC
 
-    cap >> frame; // get a new frame from camera to get the height and width of frame.
+    void imgcb(const sensor_msgs::ImageConstPtr& msg)
+    {
+        ROS_INFO("I heard:");
+        frame = cv_bridge::toCvCopy(msg, "bgr8")->image;
+        cout << "asd";
+    }
+
+    void process()
+    {
+        cout << -(frame.cols/2);;
+    }
+
+    virtual void spin()
+    {
+        ros::Rate rate(30);
+        while(ros::ok())
+        {
+            spinOnce();
+            rate.sleep();
+        }
+    }
+
+
+   virtual void spinOnce()
+   {
+        process();
+        spinOnce();
+   }
+};
+
+/* class NodeWithGui : public visuals
+{
+    virtual void spinOnce()
+    {
+        visuals::spinOnce();
+        imshow("test",visuals::imageOut_.image);
+        waitKey(1);
+    }
+};
+ */
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+int main(int argc, char **argv)
+{ 
+    ros::init(argc, argv, "visualizer");
+
+    ros::NodeHandle nh;
+    ros::NodeHandle nhPrivate("~");
+
+    visuals* node = 0;
+
+/*     if(ros::param::get<bool>("~use_gui"))
+    {
+        node = new = NodeWithGui(nh,nhPrivate);
+    }
+    else
+    {
+        node = new visuals (nh, nhPrivate);
+    } */
+       
+    node = new visuals (nh, nhPrivate);
+
+    node->spin ();
+    return 0;
+ 
+
+    
+/*     // STUFF FOR ROS 
+
+    ros::init(argc, argv, "visualizer");
+    ros::NodeHandle n;
+
+
+    ros::Rate loop_rate(10);
+    cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);
+
+    image_transport::ImageTransport it(n);
+
+    getframe gf;
+    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, gf.imgcb(Mat msg)); */
+    /* Mat frame;
+    frame = transformToCVMatrix(const sensor_msgs::ImageConstPtr& msg);
+
+    ros::Publisher point_pub = n.advertise<geometry_msgs::Point>("/cam_point_vector", 1);
+    geometry_msgs::Point msg;
 
     // IMPORTANT CHANGEABLE PARAMETERS
 
@@ -42,19 +137,8 @@ int main(int argc, char **argv)
 
     int X_offset = -(frame.cols/2); // X - 0 gets shifted into the middle of the frame
     int Y_offset = 10; // Y - 0  logically a few pixels from the bottom of the frame, can also be 0 or negative
+
         // if drone accelerates it can actually see more below it.
-
-
-    // STUFF FOR ROS 
-
-    ros::init(argc, argv, "visualizer");
-    ros::NodeHandle n;
-
-    ros::Publisher point_pub = n.advertise<geometry_msgs::Point>("/cam_point_vector", 1);
-    geometry_msgs::Point msg;
-    ros::Rate loop_rate(10);
-    cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);
-
 
     // MOST OF NEEDED DEFINITIONS HERE
 
@@ -67,11 +151,11 @@ int main(int argc, char **argv)
     RNG rng(12345);
     float sum_x, sum_y, X, Y;
 
-    namedWindow( "Contours", WINDOW_AUTOSIZE );
+    namedWindow( "Contours", WINDOW_AUTOSIZE ); */
     
     // ROS CYCLES START HERE
 
-    while(ros::ok()){
+/*     while(ros::ok()){
 
     // START CLOCK TO GET FPS
 
@@ -81,7 +165,7 @@ int main(int argc, char **argv)
 
     // GET A NEW FRAME
 
-        cap >> frame; // get a new frame from camera
+        frame = cv_bridge::toCvShare(mconst sensor_msgs::ImageConstPtr& , "bgr8")->image; // get a new frame from camera
 
     // IMAGE PROCESSING HERE
 
@@ -163,5 +247,5 @@ int main(int argc, char **argv)
     }
     // the camera will be deinitialized automatically in VideoCapture destructor
     ros::spin();
-    return 0;
+    return 0; */
 }
