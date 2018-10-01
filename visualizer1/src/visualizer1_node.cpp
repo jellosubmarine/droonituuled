@@ -107,25 +107,6 @@ int main(int argc, char **argv)
 
     /*     // STUFF FOR ROS
 
-ros::init(argc, argv, "visualizer");
-ros::NodeHandle n;
-
-
-ros::Rate loop_rate(10);
-cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);
-
-image_transport::ImageTransport it(n);
-
-getframe gf;
-image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1,
-gf.imgcb(Mat msg)); */
-    /* Mat frame;
-frame = transformToCVMatrix(const sensor_msgs::ImageConstPtr& msg);
-
-ros::Publisher point_pub =
-n.advertise<geometry_msgs::Point>("/cam_point_vector", 1);
-geometry_msgs::Point msg;
-
 // IMPORTANT CHANGEABLE PARAMETERS
 
 int lower = 1000; // Lower limit for contour size
@@ -134,8 +115,8 @@ int upper = 10000; // Upper limit for contour size
 // Define the point which is the 0,0 for coordinates (under the drone,
 needs calibrating)
 
-int X_offset = -(frame.cols/2); // X - 0 gets shifted into the middle of the
-frame
+int X_offset = -(640/2); // X - 0 gets shifted into the middle of the
+frame. 640 is the width of the frame.
 int Y_offset = 10; // Y - 0  logically a few pixels from the bottom of the
 frame, can also be 0 or negative
 
