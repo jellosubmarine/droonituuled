@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <sdf version='1.6'>
   <world name='default'>
     <light name='sun' type='directional'>
@@ -627,14 +628,14 @@
         <motorSpeedPubTopic>/motor_speed/3</motorSpeedPubTopic>
         <rotorVelocitySlowdownSim>10</rotorVelocitySlowdownSim>
       </plugin>
-      <plugin name='gps_plugin' filename='libgazebo_gps_plugin.so'>
+      <!-- <plugin name='gps_plugin' filename='libgazebo_gps_plugin.so'>
         <robotNamespace/>
         <gpsNoise>true</gpsNoise>
-      </plugin>
+      </plugin> -->
       <plugin name='mavlink_interface' filename='libgazebo_mavlink_interface.so'>
         <robotNamespace/>
         <imuSubTopic>/imu</imuSubTopic>
-        <gpsSubTopic>/gps</gpsSubTopic>
+        <!-- <gpsSubTopic>/gps</gpsSubTopic> -->
         <mavlink_addr>INADDR_ANY</mavlink_addr>
         <mavlink_udp_port>14560</mavlink_udp_port>
         <serialEnabled>false</serialEnabled>
