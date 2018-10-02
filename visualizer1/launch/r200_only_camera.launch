@@ -53,6 +53,6 @@
     </include>
   </group>
 
-  <!--<node name="visualizer1" pkg="visualizer1" type="visualizer1" /> -->
+  <node name="visualizer1_node" pkg="visualizer1" type="visualizer1_node" />
 
 </launch>
