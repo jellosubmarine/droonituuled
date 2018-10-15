@@ -39,15 +39,27 @@ class visuals
     const static int upper = 10000;  // Upper limit for contour size
     const static int X_offset = -(width / 2); // X gets shifted into the middle of the frame .
     const static int Y_offset = 10; // Y shift from the bottom of the frame.
+    const static int blur_size = 3; // Blurring size
+    const static int lowThreshold = 121;
+    const static int ratio = 1.5;
+    const static int kernel_size = 3;
 
     Mat frame;
     Mat img_gray;
-    Mat img_bw; 
+    Mat img_bw;
+    Mat erod;
+    Mat dil;
+    Mat hist;
+    Mat blurr;
     Mat img_final; 
     Mat canny_output;
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
     float sum_x, sum_y, X, Y;
+    double mean, low, up;
+    double a, b;
+
+
 
   public:
 
@@ -78,14 +90,14 @@ class visuals
         start = std::clock();
 
         // IMAGE PROCESSING HERE
-
+        
         cvtColor(frame, img_gray, CV_BGR2GRAY);              // Turn image to grayscale
-        blur(img_gray, img_gray, Size(5, 5), Point(-1, -1)); // Blur image
-        threshold(img_gray, img_bw, 0, 255, THRESH_OTSU);    // B&W filter
+        blur(img_gray, blurr, Size(blur_size, blur_size), Point(-1, -1)); // Blur image
 
-        Canny(img_bw, canny_output, 100, 100, 3); // Find edges
-        dilate(canny_output, canny_output, Mat(), Point(-1, -1), 2, 1,1); // Attempt to get rid of noise
-        erode(canny_output, canny_output, Mat(), Point(-1, -1), 2, 1, 1);
+        Canny(blurr, dil, lowThreshold, lowThreshold*ratio, kernel_size ); // Find edges
+        dilate(dil, canny_output, Mat(), Point(-1, -1), 5, 1,1); // Attempt to get rid of noise
+        erode(dil, dil, Mat(), Point(-1, -1), 4, 1, 1);
+        
         findContours(canny_output, contours, hierarchy, RETR_TREE,CHAIN_APPROX_SIMPLE, Point(0, 0)); // Get contours
 
         // GETTING CONTOUR CENTROIDS HERE
@@ -151,8 +163,8 @@ class visuals
 
         for (size_t i = 0; i < mc.size(); i++) // Visualize the centroids
         {
-            circle(canny_output, mc[i], 4, Scalar(255,5,255), -1, 8, 0);
-            circle(canny_output, XY[0], 10, Scalar(255, 5, 5), -1, 8, 0);
+            circle(canny_output, mc[i], 4, Scalar(126,123,12), -1, 8, 0);
+            circle(canny_output, XY[0], 10, Scalar(12,3,15), -1, 8, 0);
         }
 
         imshow("Contours", canny_output);
