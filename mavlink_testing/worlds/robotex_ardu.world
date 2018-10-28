@@ -102,8 +102,8 @@ LOITER> mode LAND
                     </geometry>
                     <material>
                         <script>
-                            <uri>model://mavlink_testing/materials/scripts</uri>
-                            <uri>model://mavlink_testing/materials/textures/</uri>
+                            <uri>model://materials/scripts</uri>
+                            <uri>model://materials/textures/</uri>
                             <name>MyGroundPlane/Image</name>
                         </script>
                     </material>
