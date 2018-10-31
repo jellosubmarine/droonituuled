@@ -9,6 +9,6 @@ plugin_blacklist:
 - px4flow
 - vibration
 - vision_speed_estimate
-
+- gps
 plugin_whitelist: []
 #- 'sys_*'
