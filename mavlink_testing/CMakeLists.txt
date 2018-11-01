@@ -202,3 +202,6 @@ include_directories(
 
 add_executable(offb_node src/offb_node.cpp)
 target_link_libraries(offb_node ${catkin_LIBRARIES})
+
+add_executable(offb_main src/offb_main.cpp src/offb_controller.cpp src/offb_math.cpp)
+target_link_libraries(offb_main ${catkin_LIBRARIES})
