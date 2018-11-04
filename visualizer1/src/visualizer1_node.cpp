@@ -8,7 +8,7 @@
 #include <ctime>
 #include <iostream>
 #include <numeric>
-#include "geometry_msgs/PointStamped.h"
+#include "geometry_msgs/QuaternionStamped.h"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -22,7 +22,7 @@ class visuals
   protected:
     ros::NodeHandle nh_;
     image_transport::ImageTransport it_;
-    geometry_msgs::PointStamped msg;
+    geometry_msgs::QuaternionStamped msg;
     image_transport::Subscriber sub;
     ros::Publisher point_pub;
 
@@ -33,33 +33,34 @@ class visuals
     bool image_flag;
 
     // IMPORTANT CHENAGEABLE PARAMETERS HERE
+
+    const static bool visualize = true; // True for visuals, false to turn visualizing off
+
     const static int width = 640;    // Frame width
     const static int height = 480;   // Frame height
     const static int lower  = 1000;  // Lower limit for contour size
     const static int upper = 10000;  // Upper limit for contour size
     const static int X_offset = -(width / 2); // X gets shifted into the middle of the frame .
-    const static int Y_offset = 10; // Y shift from the bottom of the frame.
+    const static int Y_offset = 0; // Y shift from the bottom of the frame.
     const static int blur_size = 3; // Blurring size
-    const static int lowThreshold = 121;
-    const static int ratio = 1.5;
-    const static int kernel_size = 3;
+    const static int lowThreshold = 121; // Canny lower threshold
+    const static int ratio = 1.5;  // Canny lower Tresh * ratio = upper thresh
+    const static int kernel_size = 3; // Canny kernel size
+    const static int mask_w = 200; // Mask cutoff from sides
 
     Mat frame;
     Mat img_gray;
     Mat img_bw;
     Mat erod;
     Mat dil;
-    Mat hist;
+    Mat masked;
     Mat blurr;
     Mat img_final; 
     Mat canny_output;
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
-    float sum_x, sum_y, X, Y;
-    double mean, low, up;
-    double a, b;
-
-
+    float sum_x, sum_y, X, Y, bot_X, bot_Y, Z;
+    int W;
 
   public:
 
@@ -67,7 +68,7 @@ class visuals
     {
         image_flag = false;
         sub = it_.subscribe("/camera/color/image_raw", 1, &visuals::imgcb, this);
-        point_pub = nh_.advertise<geometry_msgs::PointStamped>("/cam_point_vector", 1);
+        point_pub = nh_.advertise<geometry_msgs::QuaternionStamped>("/cam_point_vector", 1);
     }
 
     ~visuals() { destroyWindow("Contours"); }
@@ -90,15 +91,21 @@ class visuals
         start = std::clock();
 
         // IMAGE PROCESSING HERE
-        
+
         cvtColor(frame, img_gray, CV_BGR2GRAY);              // Turn image to grayscale
-        blur(img_gray, blurr, Size(blur_size, blur_size), Point(-1, -1)); // Blur image
+
+        blur(frame, blurr, Size(blur_size, blur_size), Point(-1, -1)); // Blur image
 
         Canny(blurr, dil, lowThreshold, lowThreshold*ratio, kernel_size ); // Find edges
-        dilate(dil, canny_output, Mat(), Point(-1, -1), 5, 1,1); // Attempt to get rid of noise
-        erode(dil, dil, Mat(), Point(-1, -1), 4, 1, 1);
-        
+        dilate(dil, erod, Mat(), Point(-1, -1), 4, 1,1); // Attempt to get rid of noise
+        //erode(dil, dil, Mat(), Point(-1, -1), 4, 1, 1);
+
+        Mat mask = cv::Mat::zeros(erod.size(), erod.type()); // all 0
+        mask(Rect(mask_w, 0,mask.cols-2*mask_w,mask.rows)) = 1;
+        erod.copyTo(canny_output, mask);
+
         findContours(canny_output, contours, hierarchy, RETR_TREE,CHAIN_APPROX_SIMPLE, Point(0, 0)); // Get contours
+        
 
         // GETTING CONTOUR CENTROIDS HERE
 
@@ -124,9 +131,17 @@ class visuals
             {
                 avg_x[i] = float(mu[i].m10 / mu[i].m00);
                 avg_y[i] = float(mu[i].m01 / mu[i].m00);
+
+                if (visualize) {
                 mc[i] =
                     Point2f(static_cast<float>(mu[i].m10 / mu[i].m00),
                             static_cast<float>(mu[i].m01 / mu[i].m00)); // for visuals
+                }
+
+                if (i==0){
+                    bot_X = static_cast<float>(mu[i].m10 / mu[i].m00);
+                    bot_Y = static_cast<float>(mu[i].m01 / mu[i].m00);
+                }
             }
 
         // CALCULATING MIDPOINT OF ALL CENTROIDS HERE
@@ -136,6 +151,8 @@ class visuals
         if (avg_x.size() == 0)
         {
             X = -1;
+            W = -1;
+            Z = -1;
         }
         else
         {
@@ -159,19 +176,24 @@ class visuals
 
         cout << XY[0];
         cout << mc.size();
+
+
         // VISUALIZING EVERYTHING HERE
+        if (visualize) {
 
         for (size_t i = 0; i < mc.size(); i++) // Visualize the centroids
         {
-            circle(canny_output, mc[i], 4, Scalar(126,123,12), -1, 8, 0);
-            circle(canny_output, XY[0], 10, Scalar(12,3,15), -1, 8, 0);
+            circle(canny_output, mc[i], 4, Scalar(100,100,100), -1, 8, 0);
+            circle(canny_output, XY[0], 10, Scalar(150,150,150), -1, 8, 0);
+            circle(canny_output, mc[0], 8, Scalar(127,127,127), -1, 8, 0);
         }
 
         imshow("Contours", canny_output);
         waitKey(1);
 
-        /*  if (waitKey(30) >= 0)
-    break; */
+        }
+
+
 
         // PUBLISHING STUFF HERE
 
@@ -179,14 +201,19 @@ class visuals
             X += X_offset;
             Y = (height - Y) + Y_offset; // (height-Y) makes the Y
             // coordinate start from the bottom.
+            bot_X += X_offset;
+            bot_Y = (height - bot_Y) + Y_offset;
+            Z = atan2(X-bot_X,Y-bot_Y);
+            W = 1;
         }
 
         msg.header.frame_id = "frames";
         msg.header.stamp = ros::Time::now();
 
-        msg.point.x = X;
-        msg.point.y = Y;
-        msg.point.z = 0;
+        msg.quaternion.x = X;
+        msg.quaternion.y = Y;
+        msg.quaternion.z = Z;
+        msg.quaternion.w = W;
 
         point_pub.publish(msg);
         // Publish point
