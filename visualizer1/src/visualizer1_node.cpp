@@ -84,11 +84,15 @@ class visuals
 
     void process()
     {
-        // START CLOCK TO GET FPS
-
         std::clock_t start;
         double duration;
-        start = std::clock();
+        if (visualize)
+            start = std::clock();
+        
+
+        // START CLOCK TO GET FPS
+
+
 
         // IMAGE PROCESSING HERE
 
@@ -151,8 +155,11 @@ class visuals
         if (avg_x.size() == 0)
         {
             X = -1;
-            W = -1;
+            W = 0;
             Z = -1;
+            if (visualize){
+                ROS_INFO("No contours detected.");
+            }
         }
         else
         {
@@ -174,22 +181,21 @@ class visuals
         XY[0] =
             Point2f(static_cast<float>(X), static_cast<float>(Y)); // For visuals
 
-        cout << XY[0];
-        cout << mc.size();
+
 
 
         // VISUALIZING EVERYTHING HERE
         if (visualize) {
 
-        for (size_t i = 0; i < mc.size(); i++) // Visualize the centroids
-        {
-            circle(canny_output, mc[i], 4, Scalar(100,100,100), -1, 8, 0);
-            circle(canny_output, XY[0], 10, Scalar(150,150,150), -1, 8, 0);
-            circle(canny_output, mc[0], 8, Scalar(127,127,127), -1, 8, 0);
-        }
+            for (size_t i = 0; i < mc.size(); i++) // Visualize the centroids
+            {
+                circle(canny_output, mc[i], 4, Scalar(100,100,100), -1, 8, 0);
+                circle(canny_output, XY[0], 10, Scalar(150,150,150), -1, 8, 0);
+                circle(canny_output, mc[0], 8, Scalar(127,127,127), -1, 8, 0);
+            }
 
-        imshow("Contours", canny_output);
-        waitKey(1);
+            imshow("Contours", canny_output);
+            waitKey(1);
 
         }
 
@@ -218,13 +224,22 @@ class visuals
         point_pub.publish(msg);
         // Publish point
 
-        ROS_INFO("Msg Sent.");
-        ROS_INFO("Subscribers: %d", point_pub.getNumSubscribers());
+        if (visualize){
 
-        // STOP CLOCK HERE, CALCULATE FPS
+            if (W==1){
+                ROS_INFO("Msg Sent.");
+                ROS_INFO("Subscribers: %d", point_pub.getNumSubscribers());
+            }
 
-        duration = (std::clock() - start) / (double)CLOCKS_PER_SEC; // Get FPS here
-        cout << "printf: " << 1 / duration << '\n';
+
+
+            // STOP CLOCK HERE, CALCULATE FPS
+
+            duration = (std::clock() - start) / (double)CLOCKS_PER_SEC; // Get FPS here
+            cout << "printf: " << 1 / duration << '\n';
+
+        }
+      
     }
 
     virtual void spin()
