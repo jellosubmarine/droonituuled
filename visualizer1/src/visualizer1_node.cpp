@@ -41,25 +41,17 @@ class visuals
     const static int lower  = 1000;  // Lower limit for contour size
     const static int upper = 10000;  // Upper limit for contour size
     const static int X_offset = -(width / 2); // X gets shifted into the middle of the frame .
-    const static int Y_offset = -(height / 2); // Y shift from the bottom of the frame.
+    const static int Y_offset = 0; // Y shift from the bottom of the frame.
     const static int blur_size = 3; // Blurring size
     const static int lowThreshold = 121; // Canny lower threshold
     const static int ratio = 1.5;  // Canny lower Tresh * ratio = upper thresh
     const static int kernel_size = 3; // Canny kernel size
-    const static int mask_w = 200; // Mask cutoff from sides
+    const static int mask_w = 150; // Mask cutoff from sides
 
-    Mat frame;
-    Mat img_gray;
-    Mat img_bw;
-    Mat erod;
-    Mat dil;
-    Mat masked;
-    Mat blurr;
-    Mat img_final;
-    Mat canny_output;
+    Mat frame, img_bw, img_gray, img_final, erod, dil, masked, blurr, canny_output;
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
-    float sum_x, sum_y, X, Y, bot_X, bot_Y, Z;
+    float sum_x, sum_y, X, Y, Z, bot_X, bot_Y, plot_x, plot_y;
     int W;
 
   public:
@@ -101,7 +93,7 @@ class visuals
         blur(frame, blurr, Size(blur_size, blur_size), Point(-1, -1)); // Blur image
 
         Canny(blurr, dil, lowThreshold, lowThreshold*ratio, kernel_size ); // Find edges
-        dilate(dil, erod, Mat(), Point(-1, -1), 4, 1,1); // Attempt to get rid of noise
+        dilate(dil, erod, Mat(), Point(-1, -1), 3, 1,1); // Attempt to get rid of noise
         //erode(dil, dil, Mat(), Point(-1, -1), 4, 1, 1);
 
         Mat mask = cv::Mat::zeros(erod.size(), erod.type()); // all 0
@@ -118,7 +110,6 @@ class visuals
 
         for (size_t i = 0; i < contours.size(); i++) // Look through all contours
         {
-
             if (contourArea(contours[i]) > lower and contourArea(contours[i]) < upper)
             {
 
@@ -130,11 +121,13 @@ class visuals
         vector<Point2f> mc(mu.size());
         vector<float> avg_x(mu.size());
         vector<float> avg_y(mu.size());
-
+        float weights;
+        weights = 0;
         for (size_t i = 0; i < mu.size(); i++) // Based on moments calculate centroids
             {
-                avg_x[i] = float(mu[i].m10 / mu[i].m00);
+                avg_x[i] = float((mu[i].m10 / mu[i].m00))/((width/2)-(mu[i].m10 / mu[i].m00));
                 avg_y[i] = float(mu[i].m01 / mu[i].m00);
+                weights += 1/((width/2)-(mu[i].m10 / mu[i].m00));
 
                 if (visualize) {
                 mc[i] =
@@ -155,17 +148,20 @@ class visuals
         if (avg_x.size() == 0)
         {
             X = -1;
-            W = 0;
             Z = -1;
-            /*
+            W = 0;
+            bot_X = -1;
+            bot_Y = -1;
+            
             if (visualize){
                 ROS_INFO("No contours detected.");
             }
-            */
+           
         }
         else
         {
-            X = (sum_x / avg_x.size()); // Get average x coordinate.
+            X = (sum_x / weights); // Get average x coordinate.
+            plot_x = X;
         }
 
         sum_y = accumulate(avg_y.begin(), avg_y.end(), 0); // Sum all centroids y values
@@ -177,31 +173,8 @@ class visuals
         else
         {
             Y = (sum_y / avg_y.size()); // Get average y coordinate.
+            plot_y = Y;
         }
-
-        vector<Point2f> XY(1);
-        XY[0] =
-            Point2f(static_cast<float>(X), static_cast<float>(Y)); // For visuals
-
-
-
-
-        // VISUALIZING EVERYTHING HERE
-        if (visualize) {
-
-            for (size_t i = 0; i < mc.size(); i++) // Visualize the centroids
-            {
-                circle(canny_output, mc[i], 4, Scalar(100,100,100), -1, 8, 0);
-                circle(canny_output, XY[0], 10, Scalar(150,150,150), -1, 8, 0);
-                circle(canny_output, mc[0], 8, Scalar(127,127,127), -1, 8, 0);
-            }
-
-            imshow("Contours", canny_output);
-            waitKey(1);
-
-        }
-
-
 
         // PUBLISHING STUFF HERE
 
@@ -212,22 +185,39 @@ class visuals
             bot_X += X_offset;
             bot_Y = (height - bot_Y) + Y_offset;
             Z = atan2(X-bot_X,Y-bot_Y);
-            W = avg_x.size(); //1;
+            W = 1;
         }
 
         msg.header.frame_id = "frames";
         msg.header.stamp = ros::Time::now();
 
-        msg.quaternion.x = X / double(width) * 2.0;
-        msg.quaternion.y = Y / double(height) * 2.0;
+        msg.quaternion.x = bot_X;
+        msg.quaternion.y = bot_Y;
         msg.quaternion.z = Z;
         msg.quaternion.w = W;
 
-        point_pub.publish(msg);
-        // Publish point
+        point_pub.publish(msg); // Publish point
+        
 
-        /*
+        // VISUALIZING EVERYTHING HERE
+
+        Point2f XY;
+        XY.x = static_cast<float>(plot_x);
+        XY.y = static_cast<float>(plot_y); // For visuals
+
         if (visualize){
+
+            for (size_t i = 0; i < mc.size(); i++) // Visualize the centroids
+            {
+                circle(canny_output, mc[i], 4, Scalar(100,100,100), -1, 8, 0);
+                circle(canny_output, XY, 10, Scalar(150,150,150), -1, 8, 0);
+                circle(canny_output, mc[0], 8, Scalar(127,127,127), -1, 8, 0);
+                line(canny_output,mc[0],XY,Scalar(75,75,75),5);
+            }
+
+            imshow("Contours", canny_output);
+            waitKey(1);
+
             if (W==1){
                 ROS_INFO("Msg Sent.");
                 ROS_INFO("Subscribers: %d", point_pub.getNumSubscribers());
@@ -237,7 +227,7 @@ class visuals
             duration = (std::clock() - start) / (double)CLOCKS_PER_SEC; // Get FPS here
             cout << "printf: " << 1 / duration << '\n';
         }
-        */
+       
     }
 
     virtual void spin()
