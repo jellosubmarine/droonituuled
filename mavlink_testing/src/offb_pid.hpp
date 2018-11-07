@@ -6,7 +6,7 @@ public:
   double update(double input, double time);
   void initFirstInput(double input, double time);
   void conf(double P, double I, double D, double F, double DTC, double DK,
-            double maxOut, double minOut, double outRamp);
+            double outBias, double maxOut, double minOut, double outRamp);
 
   // PID gains
   double p;
@@ -23,6 +23,7 @@ public:
   double maxOutput;
   double minOutput;
   double maxOutputRamp;
+  double bias;
 
   // Controller output
   double prevOutput;

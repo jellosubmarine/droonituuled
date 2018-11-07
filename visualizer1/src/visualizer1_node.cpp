@@ -41,7 +41,7 @@ class visuals
     const static int lower  = 1000;  // Lower limit for contour size
     const static int upper = 10000;  // Upper limit for contour size
     const static int X_offset = -(width / 2); // X gets shifted into the middle of the frame .
-    const static int Y_offset = 0; // Y shift from the bottom of the frame.
+    const static int Y_offset = -(height / 2); // Y shift from the bottom of the frame.
     const static int blur_size = 3; // Blurring size
     const static int lowThreshold = 121; // Canny lower threshold
     const static int ratio = 1.5;  // Canny lower Tresh * ratio = upper thresh
@@ -55,7 +55,7 @@ class visuals
     Mat dil;
     Mat masked;
     Mat blurr;
-    Mat img_final; 
+    Mat img_final;
     Mat canny_output;
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
@@ -88,7 +88,7 @@ class visuals
         double duration;
         if (visualize)
             start = std::clock();
-        
+
 
         // START CLOCK TO GET FPS
 
@@ -109,7 +109,7 @@ class visuals
         erod.copyTo(canny_output, mask);
 
         findContours(canny_output, contours, hierarchy, RETR_TREE,CHAIN_APPROX_SIMPLE, Point(0, 0)); // Get contours
-        
+
 
         // GETTING CONTOUR CENTROIDS HERE
 
@@ -117,7 +117,7 @@ class visuals
         mu.reserve(contours.size());
 
         for (size_t i = 0; i < contours.size(); i++) // Look through all contours
-        {   
+        {
 
             if (contourArea(contours[i]) > lower and contourArea(contours[i]) < upper)
             {
@@ -130,7 +130,7 @@ class visuals
         vector<Point2f> mc(mu.size());
         vector<float> avg_x(mu.size());
         vector<float> avg_y(mu.size());
-        
+
         for (size_t i = 0; i < mu.size(); i++) // Based on moments calculate centroids
             {
                 avg_x[i] = float(mu[i].m10 / mu[i].m00);
@@ -157,9 +157,11 @@ class visuals
             X = -1;
             W = 0;
             Z = -1;
+            /*
             if (visualize){
                 ROS_INFO("No contours detected.");
             }
+            */
         }
         else
         {
@@ -210,36 +212,32 @@ class visuals
             bot_X += X_offset;
             bot_Y = (height - bot_Y) + Y_offset;
             Z = atan2(X-bot_X,Y-bot_Y);
-            W = 1;
+            W = avg_x.size(); //1;
         }
 
         msg.header.frame_id = "frames";
         msg.header.stamp = ros::Time::now();
 
-        msg.quaternion.x = X;
-        msg.quaternion.y = Y;
+        msg.quaternion.x = X / double(width) * 2.0;
+        msg.quaternion.y = Y / double(height) * 2.0;
         msg.quaternion.z = Z;
         msg.quaternion.w = W;
 
         point_pub.publish(msg);
         // Publish point
 
+        /*
         if (visualize){
-
             if (W==1){
                 ROS_INFO("Msg Sent.");
                 ROS_INFO("Subscribers: %d", point_pub.getNumSubscribers());
             }
 
-
-
             // STOP CLOCK HERE, CALCULATE FPS
-
             duration = (std::clock() - start) / (double)CLOCKS_PER_SEC; // Get FPS here
             cout << "printf: " << 1 / duration << '\n';
-
         }
-      
+        */
     }
 
     virtual void spin()

@@ -3,11 +3,13 @@
 
 
 void OffbPID::conf(double P, double I, double D, double F, double DTC,
-                double DK, double maxOut, double minOut, double outRamp) {
+                double DK, double outBias,
+                double maxOut, double minOut, double outRamp) {
   this->p = P;
   this->i = I;
   this->d = D;
   this->f = F;
+  this->bias = outBias;
   dTimeConst = DTC;
   dFilterGain = DK;
   maxOutput = maxOut;
@@ -41,7 +43,7 @@ double OffbPID::update(double input, double time) {
   prevOutput = output;
   output = fmax(
       minOutput,
-      fmin(maxOutput, p * curErr + i * iOut + d * dOut + f * target)
+      fmin(maxOutput, p * curErr + i * iOut + d * dOut + f * target + bias)
   );
   double outputPRamp = prevOutput + (curTime - prevTime) * maxOutputRamp;
   double outputNRamp = prevOutput + (prevTime - curTime) * maxOutputRamp;

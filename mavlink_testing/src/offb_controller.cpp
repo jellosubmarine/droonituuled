@@ -5,7 +5,6 @@
 #include "mavros_msgs/SetMode.h"
 #include "mavros_msgs/CommandBool.h"
 #include "mavros_msgs/AttitudeTarget.h"
-#include "geometry_msgs/Quaternion.h"
 
 
 /**
@@ -17,18 +16,44 @@ int OffbController::init() {
   arm_client = nh.serviceClient<mavros_msgs::CommandBool> ("/mavros/cmd/arming");
   mode_client = nh.serviceClient<mavros_msgs::SetMode> ("/mavros/set_mode");
 
-  state_sub = nh.subscribe<mavros_msgs::State> ("/mavros/state", 3, &OffbController::state_cb, this);
-  vfr_sub = nh.subscribe<mavros_msgs::VFR_HUD> ("/mavros/vfr_hud", 3, &OffbController::vfr_cb, this);
+  stateSub = nh.subscribe<mavros_msgs::State> ("/mavros/state", 3, &OffbController::stateCB, this);
+  vfrSub = nh.subscribe<mavros_msgs::VFR_HUD> ("/mavros/vfr_hud", 3, &OffbController::vfrCB, this);
+  imuSub = nh.subscribe<sensor_msgs::Imu> ("/mavros/imu/data", 3, &OffbController::imuCB, this);
+  floorSub = nh.subscribe<geometry_msgs::QuaternionStamped> (CAM_TOPIC, 3, &OffbController::floorCB, this);
 
   raw_pub = nh.advertise<mavros_msgs::AttitudeTarget> ("/mavros/setpoint_raw/attitude", 3, true);
-  debug_pub = nh.advertise<geometry_msgs::Quaternion> ("/jk/debug", 3, false);
+  debug_pub = nh.advertise<geometry_msgs::Quaternion> (DEBUG_TOPIC, 3, false);
 
   // Configure PID-s
   ROS_INFO("Configuring PIDs");
-  altPID.conf( OFFB_PID_ALT_P, OFFB_PID_ALT_I, OFFB_PID_ALT_D, OFFB_PID_ALT_F,
-    OFFB_PID_ALT_DTC, OFFB_PID_ALT_DK, OFFB_PID_ALT_MAX_OUTPUT,
-    OFFB_PID_ALT_MIN_OUTPUT, OFFB_PID_ALT_MAX_OUTPUT_RAMP
+  altPID.conf(
+    OFFB_PID_ALT_P, OFFB_PID_ALT_I, OFFB_PID_ALT_D, OFFB_PID_ALT_F,
+    OFFB_PID_ALT_DTC, OFFB_PID_ALT_DK, OFFB_PID_ALT_BIAS,
+    OFFB_PID_ALT_MAX_OUTPUT, OFFB_PID_ALT_MIN_OUTPUT,
+    OFFB_PID_ALT_MAX_OUTPUT_RAMP
   );
+
+  pitchPID.conf(
+    OFFB_PID_PITCH_P, OFFB_PID_PITCH_I, OFFB_PID_PITCH_D, OFFB_PID_PITCH_F,
+    OFFB_PID_PITCH_DTC, OFFB_PID_PITCH_DK, OFFB_PID_PITCH_BIAS,
+    OFFB_PID_PITCH_MAX_OUTPUT, OFFB_PID_PITCH_MIN_OUTPUT,
+    OFFB_PID_PITCH_MAX_OUTPUT_RAMP
+  );
+
+  rollPID.conf(
+    OFFB_PID_ROLL_P, OFFB_PID_ROLL_I, OFFB_PID_ROLL_D, OFFB_PID_ROLL_F,
+    OFFB_PID_ROLL_DTC, OFFB_PID_ROLL_DK, OFFB_PID_ROLL_BIAS,
+    OFFB_PID_ROLL_MAX_OUTPUT, OFFB_PID_ROLL_MIN_OUTPUT,
+    OFFB_PID_ROLL_MAX_OUTPUT_RAMP
+  );
+
+  yawPID.conf(
+    OFFB_PID_YAW_P, OFFB_PID_YAW_I, OFFB_PID_YAW_D, OFFB_PID_YAW_F,
+    OFFB_PID_YAW_DTC, OFFB_PID_YAW_DK, OFFB_PID_YAW_BIAS,
+    OFFB_PID_YAW_MAX_OUTPUT, OFFB_PID_YAW_MIN_OUTPUT,
+    OFFB_PID_YAW_MAX_OUTPUT_RAMP
+  );
+
 
   ros::Duration(OFFB_DEBUG_START_DELAY).sleep();
   // TODO: REMOVE THIS
@@ -54,19 +79,34 @@ int OffbController::init() {
   return 1;
 }
 
+/**
+ * Stops the flight loop and shuts down ros
+ */
+void OffbController::shutdown() {
+  //setMode("LAND");
+  ros::shutdown();
+}
 
 /** CALLBACKS **/
 
 // State update
-void OffbController::state_cb(const mavros_msgs::State::ConstPtr& msg) {
+void OffbController::stateCB (const mavros_msgs::State::ConstPtr& msg) {
   	currentState = *msg;
 }
 
-void OffbController::vfr_cb(const mavros_msgs::VFR_HUD::ConstPtr& msg) {
+void OffbController::vfrCB (const mavros_msgs::VFR_HUD::ConstPtr& msg) {
   flightData = *msg;
 }
 
-void OffbController::timeout_cb(const ros::TimerEvent&){
+void OffbController::imuCB (const sensor_msgs::Imu::ConstPtr& msg) {
+  imuData = *msg;
+}
+
+void OffbController::floorCB (const geometry_msgs::QuaternionStamped::ConstPtr& msg) {
+  floorData = *msg;
+}
+
+void OffbController::timeoutCB (const ros::TimerEvent&){
   ROS_INFO("Timeout triggered");
   timeout = true;
 }
@@ -80,7 +120,11 @@ void OffbController::timeout_cb(const ros::TimerEvent&){
  */
 ros::Timer OffbController::startTimeout(double duration) {
   timeout = false;
-  return nh.createTimer(ros::Duration(duration), &OffbController::timeout_cb, this, true);
+  return nh.createTimer(
+            ros::Duration(duration),
+            &OffbController::timeoutCB,
+            this, true
+  );
 }
 
 /**
