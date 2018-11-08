@@ -58,9 +58,9 @@ LOITER> mode LAND
                     <contact_surface_layer>0.001</contact_surface_layer>
                 </constraints>
             </ode>
-            <max_step_size>0.002</max_step_size>
+            <max_step_size>0.001</max_step_size>
             <real_time_factor>1</real_time_factor>
-            <real_time_update_rate>500</real_time_update_rate>
+            <real_time_update_rate>700</real_time_update_rate>
 
         </physics>
         <include>
@@ -324,7 +324,7 @@ LOITER> mode LAND
             <pose frame=''>7.2875 0.061854 0.5 0 -0 0</pose>
         </model>
         <model name="iris">
-            <pose> 0 0 0.2 0 0 1.57 </pose>
+            <pose> 0 0 0.2 0 0 1.22 </pose>
             <include>
                 <uri>model://iris_with_standoffs_demo</uri>
                 <pose> 0 0 0 0 0 0 </pose>

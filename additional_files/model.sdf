@@ -49,8 +49,8 @@
           <distortionT1>0.0</distortionT1>
           <distortionT2>0.0</distortionT2>
         </plugin>
-        <!--<pose frame=''>0 0 -0.04 3.14159 1.57079 3.14159</pose>-->
-        <pose frame=''>0.07 0 -0.04 0.0 1.134 0</pose>
+        <!-- <pose frame=''>0 0 -0.04 3.14159 1.57079 3.14159</pose> -->
+        <pose frame=''>0.07 0 -0.04 0.0 1.13 0</pose>
       </sensor>
     </link>
     <joint name="camera_mount" type="fixed">
