@@ -48,11 +48,16 @@ class visuals
     const static int kernel_size = 3; // Canny kernel size
     const static int mask_w = 150; // Mask cutoff from sides
 
-    Mat frame, img_bw, img_gray, img_final, erod, dil, masked, blurr, canny_output;
+    Mat frame, img_bw, img_gray, img_final, erod, dil, masked, blurr, canny_output, data_pts;
     vector<vector<Point> > contours;
     vector<Vec4i> hierarchy;
-    float sum_x, sum_y, X, Y, Z, bot_X, bot_Y, plot_x, plot_y;
-    int W;
+    vector<Point2d> eigen_vecs;
+    float X, Y, Z;
+    int W, sz, length, angle;
+    double duration;
+    Point cntr, P1, P2;
+    Point2d XY;
+    
 
   public:
 
@@ -75,16 +80,12 @@ class visuals
     // MAIN PROCESS STARTS HERE
 
     void process()
-    {
-        std::clock_t start;
-        double duration;
-        if (visualize)
-            start = std::clock();
-
+    {   
 
         // START CLOCK TO GET FPS
-
-
+        std::clock_t start;
+        if (visualize)
+            start = std::clock();
 
         // IMAGE PROCESSING HERE
 
@@ -101,98 +102,84 @@ class visuals
         erod.copyTo(canny_output, mask);
 
         findContours(canny_output, contours, hierarchy, RETR_TREE,CHAIN_APPROX_SIMPLE, Point(0, 0)); // Get contours
-
-
+        
+  
         // GETTING CONTOUR CENTROIDS HERE
 
-        vector<Moments> mu; // Moments for calculating centroids
+        // Moments for calculating centroids
+        vector<Moments> mu;
         mu.reserve(contours.size());
 
         for (size_t i = 0; i < contours.size(); i++) // Look through all contours
         {
-            if (contourArea(contours[i]) > lower and contourArea(contours[i]) < upper)
-            {
 
+            if (contourArea(contours[i]) > lower and contourArea(contours[i]) < upper)
                 mu.push_back(moments(contours[i], false));
-            }
 
         } // Calculate moments
-
         vector<Point2f> mc(mu.size());
-        vector<float> avg_x(mu.size());
-        vector<float> avg_y(mu.size());
-        float weights;
-        weights = 0;
+        cout << mu.size();
         for (size_t i = 0; i < mu.size(); i++) // Based on moments calculate centroids
             {
-                avg_x[i] = float((mu[i].m10 / mu[i].m00))/((width/2)-(mu[i].m10 / mu[i].m00));
-                avg_y[i] = float(mu[i].m01 / mu[i].m00);
-                weights += 1/((width/2)-(mu[i].m10 / mu[i].m00));
-
-                if (visualize) {
                 mc[i] =
                     Point2f(static_cast<float>(mu[i].m10 / mu[i].m00),
-                            static_cast<float>(mu[i].m01 / mu[i].m00)); // for visuals
+                            static_cast<float>(mu[i].m01 / mu[i].m00));
                 }
 
-                if (i==0){
-                    bot_X = static_cast<float>(mu[i].m10 / mu[i].m00);
-                    bot_Y = static_cast<float>(mu[i].m01 / mu[i].m00);
-                }
-            }
 
-        // CALCULATING MIDPOINT OF ALL CENTROIDS HERE
+        //Construct a buffer used by the pca analysis
+        sz = static_cast<int>(mc.size());
+        data_pts = Mat(sz, 2, CV_64FC1);
 
-        sum_x = accumulate(avg_x.begin(), avg_x.end(), 0); // Sum all centroids x values
-
-        if (avg_x.size() == 0)
+        for (int i = 0; i < data_pts.rows; ++i)
         {
+            data_pts.at<double>(i, 0) = mc[i].x;
+            data_pts.at<double>(i, 1) = mc[i].y;
+        }
+        if(sz == 0) {
             X = -1;
+            Y = -1;
             Z = -1;
             W = 0;
-            bot_X = -1;
-            bot_Y = -1;
-            
-            if (visualize){
-                ROS_INFO("No contours detected.");
+        }
+
+        else
+        { 
+            //Perform PCA analysis
+            PCA pca_analysis(data_pts, Mat(), CV_PCA_DATA_AS_ROW);
+            //Store the center of the object
+
+            cntr = Point(static_cast<int>(pca_analysis.mean.at<double>(0, 0)),
+                            static_cast<int>(pca_analysis.mean.at<double>(0, 1)));
+
+            X = cntr.x;
+            Y = cntr.y;
+
+            //Store the eigenvectors
+            eigen_vecs.reserve(2);
+            vector<double> eigen_val(2);
+            for (int i = 0; i < 2; ++i)
+            {
+                eigen_vecs[i] = Point2d(pca_analysis.eigenvectors.at<double>(i, 0),
+                                        pca_analysis.eigenvectors.at<double>(i, 1));
+
+                eigen_val[i] = pca_analysis.eigenvalues.at<double>(0, i);
             }
-           
-        }
-        else
-        {
-            X = (sum_x / weights); // Get average x coordinate.
-            plot_x = X;
-        }
 
-        sum_y = accumulate(avg_y.begin(), avg_y.end(), 0); // Sum all centroids y values
-
-        if (avg_y.size() == 0)
-        {
-            Y = -1;
-        }
-        else
-        {
-            Y = (sum_y / avg_y.size()); // Get average y coordinate.
-            plot_y = Y;
-        }
 
         // PUBLISHING STUFF HERE
 
-        if( X >= 0 and Y >= 0) {
             X += X_offset;
-            Y = (height - Y) + Y_offset; // (height-Y) makes the Y
-            // coordinate start from the bottom.
-            bot_X += X_offset;
-            bot_Y = (height - bot_Y) + Y_offset;
-            Z = atan2(X-bot_X,Y-bot_Y);
+            Y = (height - Y) + Y_offset; // (height-Y) makes the Y coordinate start from the bottom.
+            Z = atan2(eigen_vecs[0].y,eigen_vecs[0].x);
             W = 1;
         }
 
         msg.header.frame_id = "frames";
         msg.header.stamp = ros::Time::now();
 
-        msg.quaternion.x = bot_X;
-        msg.quaternion.y = bot_Y;
+        msg.quaternion.x = X;
+        msg.quaternion.y = Y;
         msg.quaternion.z = Z;
         msg.quaternion.w = W;
 
@@ -201,19 +188,24 @@ class visuals
 
         // VISUALIZING EVERYTHING HERE
 
-        Point2f XY;
-        XY.x = static_cast<float>(plot_x);
-        XY.y = static_cast<float>(plot_y); // For visuals
-
         if (visualize){
 
-            for (size_t i = 0; i < mc.size(); i++) // Visualize the centroids
+            angle = Z;
+            length = 150;
+            P1.x = cntr.x;
+            P1.y = cntr.y;
+            P2.x =  (int)round(P1.x + length * cos(angle));
+            P2.y =  (int)round(P1.y + length * sin(angle));
+
+            for (size_t i = 0; i < data_pts.rows; i++) // Visualize the centroids
             {
-                circle(canny_output, mc[i], 4, Scalar(100,100,100), -1, 8, 0);
-                circle(canny_output, XY, 10, Scalar(150,150,150), -1, 8, 0);
-                circle(canny_output, mc[0], 8, Scalar(127,127,127), -1, 8, 0);
-                line(canny_output,mc[0],XY,Scalar(75,75,75),5);
+                XY.x = data_pts.at<double>(i, 0);
+                XY.y = data_pts.at<double>(i, 1);
+                circle(canny_output, XY, 4, Scalar(100,100,100), -1, 8, 0);
+                circle(canny_output, P1, 10, Scalar(150,150,150), -1, 8, 0);
+                line(canny_output,P1,P2,Scalar(75,75,75),5);
             }
+
 
             imshow("Contours", canny_output);
             waitKey(1);
