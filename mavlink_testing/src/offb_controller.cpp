@@ -55,8 +55,9 @@ int OffbController::init() {
   );
 
 
+  ROS_INFO("REMOVE DELAY FROM CTRL INIT");
   ros::Duration(OFFB_DEBUG_START_DELAY).sleep();
-  // TODO: REMOVE THIS
+
 
 	// Connect to FCU
 	ROS_INFO("Waiting for FCU connection");

@@ -205,5 +205,6 @@ target_link_libraries(offb_node ${catkin_LIBRARIES})
 
 add_executable( offb_main src/offb_main.cpp
                 src/offb_controller.cpp src/offb_controller_loop.cpp
+                src/offb_controller_loop_simple.cpp
                 src/offb_pid.cpp src/offb_math.cpp )
 target_link_libraries(offb_main ${catkin_LIBRARIES})

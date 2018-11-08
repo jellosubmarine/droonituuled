@@ -6,6 +6,8 @@
 #include "mavros_msgs/AttitudeTarget.h"
 #include "geometry_msgs/Quaternion.h"
 
+#ifdef OFFB_CONTROLLER_MODE_NAV
+
 #define FLIGHT_STATUS_FLYING     1
 #define FLIGHT_STATUS_LOST       2
 #define FLIGHT_STATUS_LAND       4
@@ -147,8 +149,9 @@ void OffbController::loop() {
                           pitchPID.output, 0.0, &(rawAtt.orientation));
 
           // Check for altitude outside margins
-          if (relAlt < OFFB_ALT_TARGET - OFFB_ALT_MARGIN ||
-              relAlt > OFFB_ALT_TARGET + OFFB_ALT_MARGIN)
+          if (relAlt < OFFB_ALT_TARGET - OFFB_NAV_ALT_MARGIN ||
+              relAlt > OFFB_ALT_TARGET + OFFB_NAV_ALT_MARGIN ||
+              fabs(flightData.climb) > OFFB_NAV_MAX_CLIMB )
           {
             ROS_INFO("Altitude margin breach. Stopped navigation.");
             CLEAR_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
@@ -163,8 +166,9 @@ void OffbController::loop() {
           rawAtt.orientation.z = 0.0;
 
           // Check if ready to navigate
-          if (relAlt > OFFB_ALT_TARGET - OFFB_ALT_MARGIN &&
-              relAlt < OFFB_ALT_TARGET + OFFB_ALT_MARGIN)
+          if (relAlt > OFFB_ALT_TARGET - OFFB_NAV_ALT_MARGIN &&
+              relAlt < OFFB_ALT_TARGET + OFFB_NAV_ALT_MARGIN &&
+              fabs(flightData.climb) < OFFB_NAV_MAX_CLIMB )
           {
             ROS_INFO("Starting navigation");
             SET_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
@@ -187,3 +191,5 @@ void OffbController::loop() {
   ROS_INFO("Flight loop finished");
   setMode("LAND");
 }
+
+#endif
