@@ -3,6 +3,7 @@
 
 //#define OFFB_CONTROLLER_MODE_SIMPLE
 #define OFFB_CONTROLLER_MODE_NAV
+#define OFFB_WAIT_FOR_ARM      // Comment out for in-node arming
 
 #define OFFB_FLIGHT_LOOP_RATE  5  // Hz
 #define OFFB_START_LOOP_RATE   3   // Hz

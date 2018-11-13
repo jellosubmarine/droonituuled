@@ -191,17 +191,20 @@ int OffbController::setMode(std::string modeName) {
  * Returns 1 on success, 0 on failure
  */
 int OffbController::armVehicle() {
-  ROS_INFO("Arming vehicle");
-  mavros_msgs::CommandBool arm_cmd;
-  arm_cmd.request.value = true;
+  #ifndef OFFB_WAIT_FOR_ARM
+    ROS_INFO("Arming vehicle");
+    mavros_msgs::CommandBool arm_cmd;
+    arm_cmd.request.value = true;
 
-	ros::Rate delay(OFFB_START_LOOP_RATE);
+    if (!arm_client.call(arm_cmd)) {
+      ROS_INFO("Arm call failed");
+      return 0;
+    };
+  #else
+    ROS_INFO("Waiting for vehicle to be armed");
+  #endif
 
-  if (!arm_client.call(arm_cmd)) {
-    ROS_INFO("Arm call failed");
-    return 0;
-  };
-
+  ros::Rate delay(OFFB_START_LOOP_RATE);
   ros::Timer t = startTimeout(OFFB_TIMEOUT);
   while ( ros::ok() &&
           !currentState.armed &&
@@ -218,6 +221,6 @@ int OffbController::armVehicle() {
     return 1;
   }
 
-  ROS_INFO("Failed to arm vehicle");
+  ROS_INFO("Vehicle not armed");
   return 0;
 }
