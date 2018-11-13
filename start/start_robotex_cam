@@ -1,0 +1,1 @@
+rosrun robotex_cam robotex_cam_main /camera/color/image_raw:=/iris/camera_red_iris/image_raw

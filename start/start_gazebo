@@ -1,0 +1,1 @@
+roslaunch gazebo_ros empty_world.launch world_name:=$HOME/catkin_ws/src/droonituuled/sim/worlds/robotex_ardu.world
