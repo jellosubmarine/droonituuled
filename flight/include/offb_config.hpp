@@ -4,9 +4,8 @@
 //#define OFFB_CONTROLLER_MODE_SIMPLE
 #define OFFB_CONTROLLER_MODE_NAV
 #define OFFB_WAIT_FOR_ARM      // Comment out for in-node arming
-#define OFFB_SHOW_VISUALS      // For debugging, disable for live code
 
-#define OFFB_FLIGHT_LOOP_RATE   5   // Hz
+#define OFFB_FLIGHT_LOOP_RATE  10   // Hz
 #define OFFB_START_LOOP_RATE    3   // Hz
 #define OFFB_ARM_TIMEOUT       10   // sec
 #define OFFB_GEN_TIMEOUT        5   // sec

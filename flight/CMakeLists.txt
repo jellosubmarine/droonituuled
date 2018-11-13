@@ -145,6 +145,7 @@ add_executable( ${PROJECT_NAME}_main
 	src/offb_controller.cpp
 	src/offb_controller_loop.cpp
 	src/offb_controller_loop_simple.cpp
+	src/offb_controller_visuals.cpp
 	src/offb_pid.cpp
 	src/offb_math.cpp
 )

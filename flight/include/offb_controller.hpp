@@ -9,6 +9,9 @@
 #include "geometry_msgs/QuaternionStamped.h"
 #include "geometry_msgs/PointStamped.h"
 
+#include "opencv2/core.hpp"
+
+#include "dt_config.hpp"
 #include "offb_pid.hpp"
 
 
@@ -17,6 +20,12 @@ public:
   int init();
   void loop();  // Main flight loop
   static void shutdown();
+
+  // Visuals
+  #ifdef DT_BUILD_DEV
+    void initVisuals();
+    void updateVisuals(double x, double y, double dir);
+  #endif
 
   // Callbacks
   void stateCB (const mavros_msgs::State::ConstPtr& msg);
@@ -58,6 +67,13 @@ private:
   sensor_msgs::Imu imuData;
   double zeroAlt;
   bool timeout;
+
+  // Visuals
+  #ifdef DT_BUILD_DEV
+    void drawGrid(double step);
+    cv::Mat displayMatrix;
+  #endif
+
 
   // Debug
   void debug(double w, double x, double y, double z);

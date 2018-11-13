@@ -251,7 +251,7 @@ class visuals
 
     virtual void spin()
     {
-        ros::Rate rate(30);
+        ros::Rate rate(20);
         while (ros::ok())
         {
             if (image_flag)

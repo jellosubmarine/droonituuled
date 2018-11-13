@@ -1,3 +1,4 @@
+#include "dt_config.hpp"
 #include "offb_controller.hpp"
 #include "offb_config.hpp"
 #include "offb_math.hpp"
@@ -5,6 +6,7 @@
 #include <cmath>
 #include "mavros_msgs/AttitudeTarget.h"
 #include "geometry_msgs/Quaternion.h"
+
 
 #ifdef OFFB_CONTROLLER_MODE_NAV
 
@@ -113,7 +115,7 @@ void OffbController::loop() {
           lostTime = ros::Time::now().toSec();
       }
 
-
+      // IF LOST
       if (GET_BIT(flightStatus, FLIGHT_STATUS_LOST)) {
           rawAtt.body_rate.z = OFFB_LOST_YAW_RATE;
           rawAtt.orientation.w = 1.0;
@@ -128,7 +130,7 @@ void OffbController::loop() {
         }
       }
 
-      // Visuals OK
+      // NOT LOST
       else {
         // Turn to correct heading
         yawPID.update(floorData.quaternion.z, t);
@@ -184,6 +186,9 @@ void OffbController::loop() {
     //debug(floorData.quaternion.z*180.0/M_PI, yawPID.output*180.0/M_PI, -imuData.angular_velocity.z*180.0/M_PI, flightData.altitude);
     //debug(rawAtt.thrust, flightData.altitude, 0.0, 0.0);
 		raw_pub.publish(rawAtt);
+    #ifdef DT_BUILD_DEV
+      updateVisuals(floorPoint.x, floorPoint.y, floorData.quaternion.z);
+    #endif
 		ros::spinOnce();
 		loopRate.sleep();
   }

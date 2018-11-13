@@ -8,7 +8,7 @@
 //#define DT_BUILD_LIVE
 
 #define DT_CAM_TOPIC       "/dt/cam_point_vector"
-#define DT_DEBUG_TOPIC     "/dt/debug"
+#define DT_DEBUG_TOPIC     "/dt/debug"              // geometry_msgs::Quaternion
 
 
 
