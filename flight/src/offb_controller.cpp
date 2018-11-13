@@ -1,3 +1,4 @@
+#include "dt_config.hpp"
 #include "offb_controller.hpp"
 #include "offb_config.hpp"
 
@@ -19,10 +20,10 @@ int OffbController::init() {
   stateSub = nh.subscribe<mavros_msgs::State> ("/mavros/state", 3, &OffbController::stateCB, this);
   vfrSub = nh.subscribe<mavros_msgs::VFR_HUD> ("/mavros/vfr_hud", 3, &OffbController::vfrCB, this);
   imuSub = nh.subscribe<sensor_msgs::Imu> ("/mavros/imu/data", 3, &OffbController::imuCB, this);
-  floorSub = nh.subscribe<geometry_msgs::QuaternionStamped> (CAM_TOPIC, 3, &OffbController::floorCB, this);
+  floorSub = nh.subscribe<geometry_msgs::QuaternionStamped> (DT_CAM_TOPIC, 3, &OffbController::floorCB, this);
 
   raw_pub = nh.advertise<mavros_msgs::AttitudeTarget> ("/mavros/setpoint_raw/attitude", 3, true);
-  debug_pub = nh.advertise<geometry_msgs::Quaternion> (DEBUG_TOPIC, 3, false);
+  debug_pub = nh.advertise<geometry_msgs::Quaternion> (DT_DEBUG_TOPIC, 3, false);
 
   // Configure PID-s
   ROS_INFO("Configuring PIDs");
@@ -55,15 +56,15 @@ int OffbController::init() {
   );
 
 
-  ROS_INFO("REMOVE DELAY FROM CTRL INIT");
-  ros::Duration(OFFB_DEBUG_START_DELAY).sleep();
-
+  //ROS_INFO("REMOVE DELAY FROM CTRL INIT");
+  //ros::Duration(OFFB_DEBUG_START_DELAY).sleep();
+  #warning "Remove commented delay code"
 
 	// Connect to FCU
 	ROS_INFO("Waiting for FCU connection");
   ros::Rate loopRate(OFFB_START_LOOP_RATE);
 
-  ros::Timer t = startTimeout(OFFB_TIMEOUT);
+  ros::Timer t = startTimeout(OFFB_GEN_TIMEOUT);
 	while (ros::ok() && !currentState.connected && !timeout) {
 		ros::spinOnce();
 		loopRate.sleep();
@@ -118,6 +119,8 @@ void OffbController::timeoutCB (const ros::TimerEvent&){
 
 /**
  * Creates and starts a timeout timer
+ * NB! Must not start several timout timers at the same time,
+ * there's only one timout variable
  */
 ros::Timer OffbController::startTimeout(double duration) {
   timeout = false;
@@ -166,7 +169,7 @@ int OffbController::setMode(std::string modeName) {
 		return 0;
 	};
 
-	ros::Timer t = startTimeout(OFFB_TIMEOUT);
+	ros::Timer t = startTimeout(OFFB_GEN_TIMEOUT);
 	while ( ros::ok() &&
 	 				currentState.mode != modeName &&
 				 	! timeout )
@@ -205,7 +208,7 @@ int OffbController::armVehicle() {
   #endif
 
   ros::Rate delay(OFFB_START_LOOP_RATE);
-  ros::Timer t = startTimeout(OFFB_TIMEOUT);
+  ros::Timer t = startTimeout(OFFB_ARM_TIMEOUT);
   while ( ros::ok() &&
           !currentState.armed &&
           currentState.mode != "LAND" &&

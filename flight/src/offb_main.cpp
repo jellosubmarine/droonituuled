@@ -6,7 +6,16 @@
 #include "mavros_msgs/SetMode.h"
 
 #include "offb_controller.hpp"
-//#include "offb_config.hpp"
+#include "offb_config.hpp"
+#include "dt_config.hpp"
+
+
+#ifdef DT_BUILD_DEV
+  #pragma message "robotex_flight dev build"
+#else
+  #pragma message "robotex_flight live build"
+#endif
+
 
 #define AHRS_GPS_USE_DISABLED 0
 #define AHRS_GPS_USE_ENABLED  1
@@ -30,8 +39,8 @@ void sigintHandler(int sig) {
 
 int main(int argc, char **argv) {
 	//ros::init(argc, argv, "Droonituuled", ros::init_options::NoSigintHandler);
-	ros::init(argc, argv, "Droonituuled");
-	ROS_INFO("Inited Droonituuled");
+	ros::init(argc, argv, "robotex_flight");
+	ROS_INFO("Inited robotex_flight");
 
 	ros::NodeHandle nh;
 	//ros::ServiceClient param_cl = nh.serviceClient<mavros_msgs::ParamSet> ("/mavros/param/set");
@@ -39,7 +48,7 @@ int main(int argc, char **argv) {
 
 	//signal(SIGINT, sigintHandler);
 
-	ROS_INFO("Disabling GPS");
+	//ROS_INFO("Disabling GPS");
 	/*
 	paramMsg.request.param_id = "AHRS_GPS_USE";
 	paramMsg.request.value.integer = AHRS_GPS_USE_DISABLED;
@@ -69,6 +78,9 @@ int main(int argc, char **argv) {
 		ROS_INFO("Starting controller loop");
 		ctrl.loop();
 	}
+	else {
+		ROS_INFO("Failed to initialise flight controller");
+	}
 
-	ROS_INFO("Node Droonituuled finished");
+	ROS_INFO("robotex_flight finished");
 }

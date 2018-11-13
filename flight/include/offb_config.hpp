@@ -4,12 +4,14 @@
 //#define OFFB_CONTROLLER_MODE_SIMPLE
 #define OFFB_CONTROLLER_MODE_NAV
 #define OFFB_WAIT_FOR_ARM      // Comment out for in-node arming
+#define OFFB_SHOW_VISUALS      // For debugging, disable for live code
 
-#define OFFB_FLIGHT_LOOP_RATE  5  // Hz
-#define OFFB_START_LOOP_RATE   3   // Hz
-#define OFFB_TIMEOUT           5   // sec
-#define OFFB_ZEROALT_TIME      1.0 // sec
-#define OFFB_DEBUG_START_DELAY 1.0 // sec
+#define OFFB_FLIGHT_LOOP_RATE   5   // Hz
+#define OFFB_START_LOOP_RATE    3   // Hz
+#define OFFB_ARM_TIMEOUT       10   // sec
+#define OFFB_GEN_TIMEOUT        5   // sec
+#define OFFB_ZEROALT_TIME       1.0 // sec
+#define OFFB_DEBUG_START_DELAY  1.0 // sec
 
 #define OFFB_MIN_FLIGHT_ALT    0.1 // m, less is considered on ground
 #define OFFB_NAV_ALT_MARGIN    0.3 // m, navigate when alt +- margin
@@ -81,8 +83,6 @@
 #define OFFB_PID_YAW_DTC               1.0
 #define OFFB_PID_YAW_DK                1.0
 
-#define CAM_TOPIC       "/cam_point_vector"
-#define DEBUG_TOPIC     "/dt/debug"
 
 // Utility macros
 #define SET_BIT(a,b)     ((a) |= (b))

@@ -1,3 +1,5 @@
+#include "dt_config.hpp"
+
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <ros/ros.h>
@@ -17,6 +19,14 @@
 using namespace std;
 using namespace cv;
 
+
+#ifdef DT_BUILD_DEV
+  #pragma message "robotex_cam dev build"
+#else
+  #pragma message "robotex_cam live build"
+#endif
+
+
 class visuals
 {
   protected:
@@ -34,7 +44,7 @@ class visuals
 
     // IMPORTANT CHENAGEABLE PARAMETERS HERE
 
-    const static bool visualize = false; // True for visuals, false to turn visualizing off
+    //const static bool visualize = false; // True for visuals, false to turn visualizing off
 
     const static int width = 640;    // Frame width
     const static int height = 480;   // Frame height
@@ -68,10 +78,12 @@ class visuals
     {
         image_flag = false;
         sub = it_.subscribe("/camera/color/image_raw", 1, &visuals::imgcb, this);
-        point_pub = nh_.advertise<geometry_msgs::QuaternionStamped>("/cam_point_vector", 1);
+        point_pub = nh_.advertise<geometry_msgs::QuaternionStamped>(DT_CAM_TOPIC, 1);
     }
 
-    ~visuals() { destroyWindow("Contours"); }
+    #ifdef DT_BUILD_DEV
+      ~visuals() { destroyWindow("Contours"); }
+    #endif
 
     void imgcb(const sensor_msgs::ImageConstPtr &msg)
     {
@@ -84,18 +96,13 @@ class visuals
 
     void process()
     {
-        std::clock_t start;
-        double duration;
-        if (visualize)
-            start = std::clock();
-
-
-        // START CLOCK TO GET FPS
-
-
+        #ifdef DT_BUILD_DEV
+          // Clock for frame rate calculation
+          std::clock_t start( std::clock() );
+          double duration;
+        #endif
 
         // IMAGE PROCESSING HERE
-
         cvtColor(frame, img_gray, CV_BGR2GRAY);              // Turn image to grayscale
 
         blur(frame, blurr, Size(blur_size, blur_size), Point(-1, -1)); // Blur image
@@ -136,11 +143,11 @@ class visuals
                 avg_x[i] = float(mu[i].m10 / mu[i].m00);
                 avg_y[i] = float(mu[i].m01 / mu[i].m00);
 
-                if (visualize) {
-                mc[i] =
-                    Point2f(static_cast<float>(mu[i].m10 / mu[i].m00),
-                            static_cast<float>(mu[i].m01 / mu[i].m00)); // for visuals
-                }
+                #ifdef DT_BUILD_DEV
+                  mc[i] =
+                      Point2f(static_cast<float>(mu[i].m10 / mu[i].m00),
+                              static_cast<float>(mu[i].m01 / mu[i].m00)); // for visuals
+                #endif
 
                 if (i==0){
                     bot_X = static_cast<float>(mu[i].m10 / mu[i].m00);
@@ -157,11 +164,10 @@ class visuals
             X = -1;
             W = 0;
             Z = -1;
-            /*
-            if (visualize){
-                ROS_INFO("No contours detected.");
-            }
-            */
+
+            #ifdef DT_BUILD_DEV
+              ROS_INFO("No contours detected.");
+            #endif
         }
         else
         {
@@ -187,7 +193,7 @@ class visuals
 
 
         // VISUALIZING EVERYTHING HERE
-        if (visualize) {
+        #ifdef DT_BUILD_DEV
             canny_output = canny_output * 0.7;
 
             for (size_t i = 1; i < mc.size(); i++) // Visualize the centroids
@@ -202,8 +208,7 @@ class visuals
 
             imshow("Contours", canny_output);
             waitKey(1);
-
-        }
+        #endif
 
 
 
@@ -272,8 +277,10 @@ int main(int argc, char **argv)
 
     visuals *node = 0;
 
-    namedWindow("Contours", WINDOW_AUTOSIZE);
-    startWindowThread();
+    #ifdef DT_BUILD_DEV
+      namedWindow("Contours", WINDOW_AUTOSIZE);
+      startWindowThread();
+    #endif
 
     node = new visuals(nh, nhPrivate);
 

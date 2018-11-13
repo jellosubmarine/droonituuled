@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mavlink_testing)
+project(robotex_sim)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -199,12 +199,3 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-
-add_executable(offb_node src/offb_node.cpp)
-target_link_libraries(offb_node ${catkin_LIBRARIES})
-
-add_executable( offb_main src/offb_main.cpp
-                src/offb_controller.cpp src/offb_controller_loop.cpp
-                src/offb_controller_loop_simple.cpp
-                src/offb_pid.cpp src/offb_math.cpp )
-target_link_libraries(offb_main ${catkin_LIBRARIES})
