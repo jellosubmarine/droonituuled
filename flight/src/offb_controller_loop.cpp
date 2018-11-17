@@ -1,4 +1,4 @@
-#include "dt_config.hpp"
+//#include "dt_config.hpp"
 #include "offb_controller.hpp"
 #include "offb_config.hpp"
 #include "offb_math.hpp"
@@ -48,7 +48,7 @@ void OffbController::loop() {
 
   ros::spinOnce();
   altPID.initFirstInput(flightData.altitude - zeroAlt, t);
-  //yawPID.initFirstInput(floorData.quaternion.z, t); // TODO: move to "NOT LOST" setting
+  //yawPID.initFirstInput(camData.yaw, t); // TODO: move to "NOT LOST" setting
 
   int flightStatus =
     (flightData.altitude - zeroAlt >= OFFB_MIN_FLIGHT_ALT) *
@@ -65,6 +65,7 @@ void OffbController::loop() {
   while (!ros::isShuttingDown() && currentState.mode != "LAND") {
     t = ros::Time::now().toSec();
     double relAlt = flightData.altitude - zeroAlt;
+
 
     // Check abort altitude
     if (relAlt > OFFB_ABORT_ALT) {
@@ -86,9 +87,11 @@ void OffbController::loop() {
       continue;
     }
 
+
     // Always maintain altitude
     altPID.update(flightData.altitude - zeroAlt, t);
     rawAtt.thrust = altPID.output;
+
 
     // Drone on ground
     if (! GET_BIT(flightStatus, FLIGHT_STATUS_FLYING)) {
@@ -104,49 +107,60 @@ void OffbController::loop() {
       }
     }
 
+
     // Drone in air
     else {
       // Check if drone has lost visuals
-      if (! floorData.quaternion.w &&
-          ! GET_BIT(flightStatus, FLIGHT_STATUS_LOST)) {
-          ROS_INFO("Set LOST status");
-          SET_BIT(flightStatus, FLIGHT_STATUS_LOST);
-          CLEAR_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
-          lostTime = ros::Time::now().toSec();
+      if (camData.position.z <= 1 &&
+          ! GET_BIT(flightStatus, FLIGHT_STATUS_LOST))
+      {
+        ROS_INFO("Set LOST status");
+        SET_BIT(flightStatus, FLIGHT_STATUS_LOST);
+        CLEAR_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
+        lostTime = ros::Time::now().toSec();
       }
+
 
       // IF LOST
       if (GET_BIT(flightStatus, FLIGHT_STATUS_LOST)) {
+        // Look for any lines unless we're taking off
+        if (fabs(flightData.climb) > OFFB_NAV_MAX_CLIMB)
           rawAtt.body_rate.z = OFFB_LOST_YAW_RATE;
-          rawAtt.orientation.w = 1.0;
-          rawAtt.orientation.x = 0.0;
-          rawAtt.orientation.y = 0.0;
-          rawAtt.orientation.z = 0.0;
+        else
+          rawAtt.body_rate.z = 0.0;
 
-        if (floorData.quaternion.w) {
+        // Don't attempt to control movement
+        rawAtt.orientation.w = 1.0;
+        rawAtt.orientation.x = 0.0;
+        rawAtt.orientation.y = 0.0;
+        rawAtt.orientation.z = 0.0;
+
+        if (camData.position.z) {
           ROS_INFO("Cleared LOST status");
           CLEAR_BIT(flightStatus, FLIGHT_STATUS_LOST);
-          yawPID.initFirstInput(floorData.quaternion.z, t);
+          yawPID.initFirstInput(camData.yaw, t);
         }
       }
+
 
       // NOT LOST
       else {
         // Turn to correct heading
-        yawPID.update(floorData.quaternion.z, t);
+        yawPID.update(camData.yaw, t);
         rawAtt.body_rate.z = yawPID.output;
 
         // Convert camera data
         offb_quat2euler(&(imuData.orientation), &roll, &pitch, &yaw);
         offb_cam2floor(
-          floorData.quaternion.x, floorData.quaternion.y, flightData.altitude,
+          camData.position.x, camData.position.y, flightData.altitude,
           OFFB_CAM_ANGLE - pitch, OFFB_CAM_FOV_X, OFFB_CAM_FOV_Y,
           &floorPoint
         );
 
+        // Navigate
         if (GET_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE)) {
-          pitchPID.update(floorPoint.y, t);
-          rollPID.update(floorPoint.x, t);
+          pitchPID.update(floorPoint.y, camData.velocity.y, t);
+          rollPID.update(floorPoint.x, camData.velocity.x, t);
           offb_euler2quat(rollPID.output + rawAtt.body_rate.z * OFFB_ROLL_YAW_COUPL,
                           pitchPID.output, 0.0, &(rawAtt.orientation));
 
@@ -174,8 +188,8 @@ void OffbController::loop() {
           {
             ROS_INFO("Starting navigation");
             SET_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
-            pitchPID.initFirstInput(floorData.quaternion.y, t);
-            rollPID.initFirstInput(floorData.quaternion.x, t);
+            pitchPID.initFirstInput(camData.position.y, t);
+            rollPID.initFirstInput(camData.position.x, t);
           }
         } // Navigate
       } // lost
@@ -183,11 +197,11 @@ void OffbController::loop() {
 
     //debug(rawAtt.orientation.w, rawAtt.orientation.x, rawAtt.orientation.y, rawAtt.orientation.z);
     debug(floorPoint.y, floorPoint.x, pitchPID.output*180.0/M_PI, rollPID.output*180.0/M_PI);
-    //debug(floorData.quaternion.z*180.0/M_PI, yawPID.output*180.0/M_PI, -imuData.angular_velocity.z*180.0/M_PI, flightData.altitude);
+    //debug(camData.yaw*180.0/M_PI, yawPID.output*180.0/M_PI, -imuData.angular_velocity.z*180.0/M_PI, flightData.altitude);
     //debug(rawAtt.thrust, flightData.altitude, 0.0, 0.0);
 		raw_pub.publish(rawAtt);
-    #ifdef DT_BUILD_DEV
-      updateVisuals(floorPoint.x, floorPoint.y, floorData.quaternion.z);
+    #ifdef OFFB_SHOW_VISUALS
+      updateVisuals(floorPoint.x, floorPoint.y, camData.yaw);
     #endif
 		ros::spinOnce();
 		loopRate.sleep();

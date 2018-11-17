@@ -26,19 +26,32 @@ void OffbPID::initFirstInput(double input, double time) {
 }
 
 
-double OffbPID::update(double input, double time) {
+void OffbPID::update(double input, double time) {
+  updateInput(input, time);
+  derivative();
+  updateOutput();
+}
+
+void OffbPID::update(double input, double vel, double time) {
+  updateInput(input, time);
+  dOut = vel;
+  updateOutput();
+}
+
+void OffbPID::updateInput(double input, double time) {
   curInput = input;
   prevErr = curErr;
   curErr = target - curInput;
   prevTime = curTime;
   curTime = time;
+}
 
+void OffbPID::updateOutput() {
   if ( (output < maxOutput || curErr*i < 0) &&
        (output > minOutput || curErr*i > 0) )
   {
     integrate();
   }
-  derivative();
 
   prevOutput = output;
   output = fmax(
@@ -48,8 +61,6 @@ double OffbPID::update(double input, double time) {
   double outputPRamp = prevOutput + (curTime - prevTime) * maxOutputRamp;
   double outputNRamp = prevOutput + (prevTime - curTime) * maxOutputRamp;
   output = fmax( outputNRamp, fmin(outputPRamp, output) );
-
-  return output;
 }
 
 

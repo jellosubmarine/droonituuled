@@ -3,7 +3,8 @@
 
 class OffbPID {
 public:
-  double update(double input, double time);
+  void update(double input, double vel, double time);
+  void update(double input, double time);
   void initFirstInput(double input, double time);
   void conf(double P, double I, double D, double F, double DTC, double DK,
             double outBias, double maxOut, double minOut, double outRamp);
@@ -32,6 +33,8 @@ public:
 //private:
   void integrate();
   void derivative();
+  void updateInput(double input, double time);
+  void updateOutput();
 
   // Persistent states for integral and derivative
   double iOut;

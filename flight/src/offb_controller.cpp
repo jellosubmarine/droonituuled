@@ -20,7 +20,7 @@ int OffbController::init() {
   stateSub = nh.subscribe<mavros_msgs::State> ("/mavros/state", 3, &OffbController::stateCB, this);
   vfrSub = nh.subscribe<mavros_msgs::VFR_HUD> ("/mavros/vfr_hud", 3, &OffbController::vfrCB, this);
   imuSub = nh.subscribe<sensor_msgs::Imu> ("/mavros/imu/data", 3, &OffbController::imuCB, this);
-  floorSub = nh.subscribe<geometry_msgs::QuaternionStamped> (DT_CAM_TOPIC, 3, &OffbController::floorCB, this);
+  camSub = nh.subscribe<mavros_msgs::PositionTarget> (DT_CAM_TOPIC, 3, &OffbController::camCB, this);
 
   raw_pub = nh.advertise<mavros_msgs::AttitudeTarget> ("/mavros/setpoint_raw/attitude", 3, true);
   debug_pub = nh.advertise<geometry_msgs::Quaternion> (DT_DEBUG_TOPIC, 3, false);
@@ -57,7 +57,7 @@ int OffbController::init() {
 
 
   // Init visuals
-  #ifdef DT_BUILD_DEV
+  #ifdef OFFB_SHOW_VISUALS
     initVisuals();
   #endif
 
@@ -85,10 +85,12 @@ int OffbController::init() {
 /**
  * Stops the flight loop and shuts down ros
  */
+ /*
 void OffbController::shutdown() {
   //setMode("LAND");
   ros::shutdown();
 }
+*/
 
 /** CALLBACKS **/
 
@@ -105,8 +107,8 @@ void OffbController::imuCB (const sensor_msgs::Imu::ConstPtr& msg) {
   imuData = *msg;
 }
 
-void OffbController::floorCB (const geometry_msgs::QuaternionStamped::ConstPtr& msg) {
-  floorData = *msg;
+void OffbController::camCB (const mavros_msgs::PositionTarget::ConstPtr& msg) {
+  camData = *msg;
 }
 
 void OffbController::timeoutCB (const ros::TimerEvent&){
@@ -195,6 +197,7 @@ int OffbController::setMode(std::string modeName) {
  * Returns 1 on success, 0 on failure
  */
 int OffbController::armVehicle() {
+
   #ifndef OFFB_WAIT_FOR_ARM
     ROS_INFO("Arming vehicle");
     mavros_msgs::CommandBool arm_cmd;
@@ -207,6 +210,7 @@ int OffbController::armVehicle() {
   #else
     ROS_INFO("Waiting for vehicle to be armed");
   #endif
+
 
   ros::Rate delay(OFFB_START_LOOP_RATE);
   ros::Timer t = startTimeout(OFFB_ARM_TIMEOUT);

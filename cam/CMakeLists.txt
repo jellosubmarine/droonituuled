@@ -12,7 +12,7 @@ find_package( catkin REQUIRED COMPONENTS
   image_transport
   roscpp
   sensor_msgs
-	geometry_msgs
+	mavros_msgs
 )
 
 find_package( OpenCV REQUIRED )

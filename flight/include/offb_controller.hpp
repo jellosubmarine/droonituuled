@@ -6,12 +6,15 @@
 #include "mavros_msgs/VFR_HUD.h"
 #include "sensor_msgs/Imu.h"
 #include "geometry_msgs/Quaternion.h"
-#include "geometry_msgs/QuaternionStamped.h"
+//#include "geometry_msgs/QuaternionStamped.h"
 #include "geometry_msgs/PointStamped.h"
+#include "mavros_msgs/PositionTarget.h"
+
 
 #include "opencv2/core.hpp"
 
 #include "dt_config.hpp"
+#include "offb_controller.hpp"
 #include "offb_pid.hpp"
 
 
@@ -19,10 +22,10 @@ class OffbController {
 public:
   int init();
   void loop();  // Main flight loop
-  static void shutdown();
+  //static void shutdown();
 
   // Visuals
-  #ifdef DT_BUILD_DEV
+  #ifdef OFFB_SHOW_VISUALS
     void initVisuals();
     void updateVisuals(double x, double y, double dir);
   #endif
@@ -32,7 +35,7 @@ public:
   void timeoutCB (const ros::TimerEvent&);
   void vfrCB (const mavros_msgs::VFR_HUD::ConstPtr& msg);
   void imuCB (const sensor_msgs::Imu::ConstPtr& msg);
-  void floorCB (const geometry_msgs::QuaternionStamped::ConstPtr& msg);
+  void camCB (const mavros_msgs::PositionTarget::ConstPtr& msg);
 
   // Ros Comms
   ros::NodeHandle nh;
@@ -43,7 +46,7 @@ public:
   ros::Subscriber stateSub;
   ros::Subscriber vfrSub;
   ros::Subscriber imuSub;
-  ros::Subscriber floorSub;
+  ros::Subscriber camSub;
 
   ros::Publisher raw_pub;
 
@@ -63,13 +66,14 @@ private:
   // Data storage
   mavros_msgs::State currentState;
   mavros_msgs::VFR_HUD flightData;
-  geometry_msgs::QuaternionStamped floorData;
+  //geometry_msgs::QuaternionStamped camData;
+  mavros_msgs::PositionTarget camData;
   sensor_msgs::Imu imuData;
   double zeroAlt;
   bool timeout;
 
   // Visuals
-  #ifdef DT_BUILD_DEV
+  #ifdef OFFB_SHOW_VISUALS
     void drawGrid(double step);
     cv::Mat displayMatrix;
   #endif

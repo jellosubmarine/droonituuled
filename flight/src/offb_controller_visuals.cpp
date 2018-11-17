@@ -6,7 +6,7 @@
 #include "opencv2/imgproc.hpp"
 #include <cmath>
 
-#ifdef DT_BUILD_DEV
+#ifdef OFFB_SHOW_VISUALS
 
 #define OFFB_DISPLAY_NAME "Flight Controller Visuals"
 #define OFFB_DISPLAY_WIDTH     500

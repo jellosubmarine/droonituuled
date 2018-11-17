@@ -24,8 +24,8 @@ using namespace cv;
 
 Visuals::Visuals(ros::NodeHandle &nh_) : it_(nh_) {
   image_flag = false;
-  sub = it_.subscribe("/camera/color/image_raw", 1, &Visuals::imgcb, this);
-  point_pub = nh_.advertise<geometry_msgs::QuaternionStamped>(DT_CAM_TOPIC, 1);
+  image_sub = it_.subscribe("/camera/color/image_raw", 1, &Visuals::imgcb, this);
+  point_pub = nh_.advertise<mavros_msgs::PositionTarget>(DT_CAM_TOPIC, 1);
 }
 
 #ifdef DT_BUILD_DEV
@@ -33,7 +33,7 @@ Visuals::Visuals(ros::NodeHandle &nh_) : it_(nh_) {
 #endif
 
 void Visuals::imgcb(const sensor_msgs::ImageConstPtr &msg) {
-  frame_time = ros::Time::now().toSec();
+  frame_time = ros::Time::now();
   frame = cv_bridge::toCvCopy(msg, "bgr8")->image;
   cvtColor(frame, frame_gray, CV_BGR2GRAY); // no risk of overwriting prematurely
   image_flag = true;
@@ -55,11 +55,17 @@ void Visuals::process() {
     of_old_points.clear();
 
     // Detect keypoints and extract raw point data
+    /*
     feature_detector->detect(frame_gray_old, of_keypoints);
     for (size_t i = 0; i < of_keypoints.size(); ++i){
       of_old_points.push_back(of_keypoints[i].pt);
     }
-    // goodFeaturesToTrack(gray_old, of_old_points, maxCorners, qualityLevel, minDistance, noArray(), blockSize);
+    */
+    goodFeaturesToTrack(frame_gray_old, of_old_points, CAM_GF_MAX_POINTS,
+        CAM_GF_QUALITY, CAM_GF_MIN_DIST, cv::noArray(), CAM_GF_BLOCK_SIZE);
+
+    ROS_INFO_STREAM("Found " << of_old_points.size() << " OF points" );
+
   }
 
 
@@ -83,18 +89,21 @@ void Visuals::process() {
   for (size_t i = 0; i < of_status.size(); ++i) {
     if (of_status[i]) {
       of_velocities.push_back( cv::Point2f(
-        (of_new_points[i].x - of_old_points[i].x) / (frame_time - frame_old_time) / float(CAM_FRAME_WIDTH) * 2.0f,  // Normalised to half frame
-        (of_old_points[i].y - of_new_points[i].y) / (frame_time - frame_old_time) / float(CAM_FRAME_HEIGHT) * 2.0f
+        (of_new_points[i].x - of_old_points[i].x),
+        (of_old_points[i].y - of_new_points[i].y)  // Correct frame orientation
       ) );
+
       of_mean_velocity.x += of_velocities[i].x;
       of_mean_velocity.y += of_velocities[i].y;
-      //goodOld.push_back(of_old_points[i]);
-      //goodNew.push_back(of_new_points[i]);
     }
   }
 
-  of_mean_velocity.x /= float(of_velocities.size());
-  of_mean_velocity.y /= float(of_velocities.size());
+  if (of_velocities.size() > 0) {
+    of_mean_velocity.x = of_mean_velocity.x / float(of_velocities.size()) /
+        (frame_time - frame_old_time).toSec() / float(CAM_FRAME_WIDTH) * 2.0f;  // Normalised to half frame
+    of_mean_velocity.y = of_mean_velocity.y / float(of_velocities.size()) /
+        (frame_time - frame_old_time).toSec() / float(CAM_FRAME_HEIGHT) * 2.0f;  // Normalised to half frame
+  }
 
   // Finished with OF
 
@@ -159,15 +168,14 @@ void Visuals::process() {
     Z = -1.0;
 
     #ifdef DT_BUILD_DEV
-      ROS_INFO("No contours detected.");
+      //ROS_INFO("No contours detected.");
     #endif
   }
 
-  // TODO: Publish OF velocities
-
   // Publish average point x, y,
   // directon from bottom point to average point,
-  // number of found points
+  // number of found points,
+  // of mean velocity
 
   if( X >= 0 and Y >= 0) {
     X -= CAM_FRAME_OFFSET_X;
@@ -179,32 +187,70 @@ void Visuals::process() {
   }
 
   //msg.header.frame_id = "frames";
-  msg.header.stamp = ros::Time::now();
-  msg.quaternion.x = X / float(CAM_FRAME_WIDTH) * 2.0;  // Norm to half frame
-  msg.quaternion.y = Y / float(CAM_FRAME_HEIGHT) * 2.0;
-  msg.quaternion.z = Z;
-  msg.quaternion.w = W;
+  msg.header.stamp = frame_time;
+
+  // mean centroid
+  msg.position.x = X / float(CAM_FRAME_WIDTH) * 2.0;  // Norm to half frame
+  msg.position.y = Y / float(CAM_FRAME_HEIGHT) * 2.0;
+  msg.position.z = W; // Number of visible points
+
+  // direction of centroids
+  msg.yaw = Z;
+
+  // OF velocity
+  msg.velocity.x = of_mean_velocity.x;
+  msg.velocity.y = of_mean_velocity.y;
 
   point_pub.publish(msg);
 
 
-  // VISUALIZING EVERYTHING HERE
+  // DRAW VISUALS
   #ifdef DT_BUILD_DEV
-    canny_output = canny_output * 0.7;
+    //canny_output = canny_output * 0.2;
 
     // Draw centroid markers
     for (size_t i = 1; i < mc.size(); i++) {
-        circle(canny_output, mc[i], 4, Scalar(100), 2, 8, 0);
+        circle(frame, mc[i], 4, Scalar(100,80,50), 2, 8, 0);
     }
 
     // Draw average and bottom markers
     if (mc.size() > 0) {
-      Point2f XY(static_cast<float>(X), static_cast<float>(Y));
-      circle(canny_output, XY, 10, Scalar(180), -1, 8, 0);
-      circle(canny_output, mc[0], 8, Scalar(140), -1, 8, 0);
+      Point2f XY(
+        static_cast<float>(X+CAM_FRAME_OFFSET_X),
+        static_cast<float>(CAM_FRAME_HEIGHT - Y - CAM_FRAME_OFFSET_Y));
+      circle(frame, XY, 10, Scalar(30,200,50), -1, 8, 0);
+      circle(frame, mc[0], 7, Scalar(30,150,30), -1, 8, 0);
     }
 
-    imshow("Contours", canny_output);
+    // Draw mean velocity vector
+    cv::arrowedLine( frame,
+      cv::Point(
+        CAM_FRAME_OFFSET_X,
+        CAM_FRAME_HEIGHT - CAM_FRAME_OFFSET_Y
+      ),
+      cv::Point(
+        CAM_FRAME_OFFSET_X + of_mean_velocity.x * CAM_FRAME_WIDTH,
+        CAM_FRAME_HEIGHT - (CAM_FRAME_OFFSET_Y + of_mean_velocity.y * CAM_FRAME_HEIGHT)
+      ),
+      Scalar(40,40,200), 2, 8, 0, 0.1
+    );
+
+    // Draw detected features
+    for (int i = 0; i < of_old_points.size(); ++i) {
+      cv::drawMarker(
+        frame, of_old_points[i], Scalar(200,30,30),
+        cv::MARKER_TILTED_CROSS, 5, 1, 8
+      );
+    }
+
+    for (int i = 0; i < of_new_points.size(); ++i) {
+      cv::drawMarker(
+        frame, of_new_points[i], Scalar(50,200,30),
+        cv::MARKER_TILTED_CROSS, 5, 1, 8
+      );
+    }
+
+    imshow(CAM_WINDOW_NAME, frame);
     waitKey(1);
 
     /*
@@ -244,10 +290,10 @@ void Visuals::run() {
   frame_old_time = frame_time;
   image_flag = false;
 
-  feature_detector = cv::FastFeatureDetector::create(50, true);
+  feature_detector = cv::FastFeatureDetector::create(CAM_FAST_THRESHOLD, true);
   of_criteria = cvTermCriteria(TermCriteria::COUNT|TermCriteria::EPS,20,0.03);
   of_win_size = cvSize(15,15);
-
+  of_refresh_counter = CAM_OF_REFRESH_INTERVAL;
 
   // Create image mask
   mask = cv::Mat::zeros(frame.size(), CV_8UC1);
@@ -278,7 +324,7 @@ int main(int argc, char **argv)
     Visuals node(nh);
 
     #ifdef DT_BUILD_DEV
-      namedWindow("Contours", WINDOW_AUTOSIZE);
+      namedWindow(CAM_WINDOW_NAME, WINDOW_AUTOSIZE);
       startWindowThread();
     #endif
 
