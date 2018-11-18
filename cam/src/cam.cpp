@@ -20,6 +20,26 @@ using namespace cv;
 #endif
 
 
+// Squared distance between two points
+double dist2(const cv::Point2f& p1, const cv::Point2f& p2) {
+  return (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
+}
+
+// Calculates the mean point of a given set
+void mean_point(const std::vector<cv::Point2f>& points, cv::Point2f& output) {
+  if (points.size() <= 0) return;
+
+  output.x = 0.0;
+  output.y = 0.0;
+  for (int i = 0; i < points.size(); ++i) {
+    output.x += points[i].x;
+    output.y += points[i].y;
+  }
+  output.x /= float(points.size());
+  output.y /= float(points.size());
+}
+
+
 /* CONSTRUCTORS AND CALLBACKS */
 
 Visuals::Visuals(ros::NodeHandle &nh_) : it_(nh_) {
@@ -120,11 +140,7 @@ void Visuals::process() {
 
   // Clear storage vectors
   mu.clear();
-  avg_x.clear();
-  avg_y.clear();
-  #ifdef DT_BUILD_DEV
-    mc.clear();
-  #endif
+  centroids.clear();
 
   // Calculate contour moments
   for (size_t i = 0; i < contours.size(); ++i) { // Look through all contours
@@ -137,39 +153,76 @@ void Visuals::process() {
 
   // Calculate centroids from moments
   for (size_t i = 0; i < mu.size(); i++) {
-    avg_x.push_back( float(mu[i].m10 / mu[i].m00) );
-    avg_y.push_back( float(mu[i].m01 / mu[i].m00) );
-
-    #ifdef DT_BUILD_DEV
-      // For visualisation
-      mc.push_back( Point2f( static_cast<float>(mu[i].m10 / mu[i].m00),
-                             static_cast<float>(mu[i].m01 / mu[i].m00) ) );
-    #endif
-
-    if (i==0){
-        bot_X = static_cast<float>(mu[i].m10 / mu[i].m00);
-        bot_Y = static_cast<float>(mu[i].m01 / mu[i].m00);
-    }
+    centroids.push_back(cv::Point2f(
+      float(mu[i].m10) / float(mu[i].m00),
+      float(mu[i].m01) / float(mu[i].m00)
+    ));
   }
 
-  // Calculate mean centroid
-  sum_x = accumulate(avg_x.begin(), avg_x.end(), 0); // Sum all centroids' x values
-  sum_y = accumulate(avg_y.begin(), avg_y.end(), 0); // Sum all centroids' y values
 
-  if (avg_x.size() > 0) {
-    X = (sum_x / float(avg_x.size())); // Average x coordinate
-    Y = (sum_y / float(avg_y.size())); // Average y coordinate
+  W = centroids.size();
+  if (W > 0){
+    mean_point(centroids, mean_centroid);
+
+    // Find outliers
+    // Brute force, use cv::Mat
+    // rows are from points, columns are to points
+    // find the row with largest sum
+    distances = cv::Mat::zeros(W,W,CV_32F);
+    float max_dist1 = 0.0;
+    float max_dist2 = 0.0;
+    int max_dist_i = 0;
+
+    for (int i = 0; i < W; ++i) {
+      float dist_sum = 0.0;
+
+      // Add up distances to here from prev points
+      for (int j = 0; j < i; ++j) {
+        dist_sum += distances.at<float>(j,i);
+      }
+
+      // Add up distances from here to next points
+      for (int j = i+1; j < W; ++j) {
+          distances.at<float>(i,j) = dist2(centroids[i], centroids[j]);
+          dist_sum += distances.at<float>(i,j);
+      }
+
+      if (dist_sum > max_dist1) {
+        max_dist2 = max_dist1;
+        max_dist1 = dist_sum;
+        max_dist_i = i;
+      }
+      else if (dist_sum > max_dist2) {
+        max_dist2 = dist_sum;
+      }
+    }
+
+    // If one point is significantly away from others,
+    // remove it and re-calculate mean point
+    if (max_dist1 > CAM_CONTOUR_OUTLIER * max_dist2) {
+      ROS_INFO_STREAM(
+        "Dropped point [" <<
+        centroids[max_dist_i].x + CAM_FRAME_OFFSET_X <<
+        ", " <<
+        CAM_FRAME_HEIGHT - centroids[max_dist_i].y - CAM_FRAME_OFFSET_Y <<
+        "]"
+      );
+      centroids.erase( centroids.begin() + max_dist_i );
+      mean_point(centroids, mean_centroid);
+    }
+
+
+    mean_centroid.x -= CAM_FRAME_OFFSET_X;
+    mean_centroid.y = CAM_FRAME_HEIGHT - mean_centroid.y - CAM_FRAME_OFFSET_Y; // Conv Y to bottom up
+
+    bottom_centroid.x = centroids[0].x - CAM_FRAME_OFFSET_X;
+    bottom_centroid.y = CAM_FRAME_HEIGHT - centroids[0].y - CAM_FRAME_OFFSET_Y;
+
+    Z = atan2( mean_centroid.x - bottom_centroid.x,
+               mean_centroid.y - bottom_centroid.y );
   }
   else {
-    // No contours found
-    W = 0;
-    X = -1.0;
-    Y = -1.0;
-    Z = -1.0;
-
-    #ifdef DT_BUILD_DEV
-      //ROS_INFO("No contours detected.");
-    #endif
+    Z = 0.0;
   }
 
   // Publish average point x, y,
@@ -177,21 +230,12 @@ void Visuals::process() {
   // number of found points,
   // of mean velocity
 
-  if( X >= 0 and Y >= 0) {
-    X -= CAM_FRAME_OFFSET_X;
-    Y = CAM_FRAME_HEIGHT - Y - CAM_FRAME_OFFSET_Y; // Conv Y to bottom up
-    bot_X -= CAM_FRAME_OFFSET_X;
-    bot_Y = CAM_FRAME_HEIGHT - bot_Y - CAM_FRAME_OFFSET_Y;
-    Z = atan2(X-bot_X,Y-bot_Y);
-    W = avg_x.size();
-  }
-
   //msg.header.frame_id = "frames";
   msg.header.stamp = frame_time;
 
   // mean centroid
-  msg.position.x = X / float(CAM_FRAME_WIDTH) * 2.0;  // Norm to half frame
-  msg.position.y = Y / float(CAM_FRAME_HEIGHT) * 2.0;
+  msg.position.x = mean_centroid.x / float(CAM_FRAME_WIDTH) * 2.0;  // Norm to half frame
+  msg.position.y = mean_centroid.y / float(CAM_FRAME_HEIGHT) * 2.0;
   msg.position.z = W; // Number of visible points
 
   // direction of centroids
@@ -209,17 +253,17 @@ void Visuals::process() {
     //canny_output = canny_output * 0.2;
 
     // Draw centroid markers
-    for (size_t i = 1; i < mc.size(); i++) {
-        circle(frame, mc[i], 4, Scalar(100,80,50), 2, 8, 0);
+    for (size_t i = 1; i < W; i++) {
+        circle(frame, centroids[i], 4, Scalar(100,80,50), 2, 8, 0);
     }
 
     // Draw average and bottom markers
-    if (mc.size() > 0) {
+    if (W > 0) {
       Point2f XY(
-        static_cast<float>(X+CAM_FRAME_OFFSET_X),
-        static_cast<float>(CAM_FRAME_HEIGHT - Y - CAM_FRAME_OFFSET_Y));
+        static_cast<float>(mean_centroid.x + CAM_FRAME_OFFSET_X),
+        static_cast<float>(CAM_FRAME_HEIGHT - mean_centroid.y - CAM_FRAME_OFFSET_Y));
       circle(frame, XY, 10, Scalar(30,200,50), -1, 8, 0);
-      circle(frame, mc[0], 7, Scalar(30,150,30), -1, 8, 0);
+      circle(frame, centroids[0], 7, Scalar(30,150,30), -1, 8, 0);
     }
 
     // Draw mean velocity vector
@@ -250,6 +294,7 @@ void Visuals::process() {
       );
     }
 
+    cv::multiply(frame, mask3, frame);
     imshow(CAM_WINDOW_NAME, frame);
     waitKey(1);
 
@@ -302,6 +347,13 @@ void Visuals::run() {
               mask.rows )
   ) = Scalar(1);
 
+  //mask3 = cv::Mat::ones(frame.size(), CV_8UC3);
+  mask3 = cv::Mat(frame.size(), CV_8UC3);
+  mask3 = Scalar(1,1,0);
+  mask3( Rect( CAM_FRAME_MASK_WIDTH, 0,
+              mask.cols - 2 * CAM_FRAME_MASK_WIDTH,
+              mask.rows )
+  ) = Scalar(1,1,1);
 
   // Main processing loop
   while (ros::ok()) {

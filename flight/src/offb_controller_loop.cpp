@@ -124,7 +124,7 @@ void OffbController::loop() {
       // IF LOST
       if (GET_BIT(flightStatus, FLIGHT_STATUS_LOST)) {
         // Look for any lines unless we're taking off
-        if (fabs(flightData.climb) > OFFB_NAV_MAX_CLIMB)
+        if (fabs(flightData.climb) < OFFB_NAV_MAX_CLIMB)
           rawAtt.body_rate.z = OFFB_LOST_YAW_RATE;
         else
           rawAtt.body_rate.z = 0.0;

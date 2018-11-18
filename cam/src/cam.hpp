@@ -12,7 +12,7 @@
 #define CAM_FRAME_HEIGHT       480
 #define CAM_FRAME_OFFSET_X     320
 #define CAM_FRAME_OFFSET_Y     240
-#define CAM_FRAME_MASK_WIDTH   1
+#define CAM_FRAME_MASK_WIDTH   50
 
 #define CAM_CANNY_THR_LOW      121
 #define CAM_CANNY_THR_HIGH     (CAM_CANNY_THR_LOW * 1.5)
@@ -20,6 +20,7 @@
 #define CAM_BLUR_SIZE            3
 #define CAM_CONTOUR_LIM_LOW   1000
 #define CAM_CONTOUR_LIM_HIGH 10000
+#define CAM_CONTOUR_OUTLIER      1.5  // Distance factor
 
 #define CAM_OF_REFRESH_INTERVAL 15  // frames
 #define CAM_OF_MAX_LEVELS        2  // OF pyramid levels
@@ -71,17 +72,18 @@ private:
   // Image processing storage
   cv::Mat img_gray, img_bw, img_final;
   cv::Mat blurr, erod, dil;
-  cv::Mat mask, masked;
-  cv::Mat canny_output;
+  cv::Mat mask, canny_output;
 
   std::vector<std::vector<cv::Point> > contours;
   std::vector<cv::Moments> mu;
   std::vector<cv::Vec4i> hierarchy;
-  std::vector<float> avg_x, avg_y;
-  float sum_x, sum_y, X, Y, bot_X, bot_Y, Z;
+  std::vector<cv::Point2f> centroids;
+  cv::Mat distances;
+  cv::Point2f bottom_centroid, mean_centroid;
+  float Z;
   int W;
   #ifdef DT_BUILD_DEV
-    std::vector<cv::Point2f> mc;
+    cv::Mat mask3;
   #endif
 };
 

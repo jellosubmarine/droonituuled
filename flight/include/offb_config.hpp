@@ -19,7 +19,7 @@
 
 #define OFFB_MIN_FLIGHT_ALT    0.1 // m, less is considered on ground
 #define OFFB_NAV_ALT_MARGIN    0.3 // m, navigate when alt +- margin
-#define OFFB_NAV_MAX_CLIMB     0.2 // m/s
+#define OFFB_NAV_MAX_CLIMB     0.3 // m/s
 #define OFFB_ABORT_ALT         2.0 // m, max allowed altitude
 #define OFFB_ABORT_LOST_TIME  10.0 // s, max time to be lost
 
@@ -32,7 +32,7 @@
 #define OFFB_CAM_OFFSET_Y      0.0
 
 #define DEG 0.017453293 // deg2rad conversion
-#define OFFB_ROLL_YAW_COUPL           0.001
+#define OFFB_ROLL_YAW_COUPL           0.01
 #define OFFB_LOST_YAW_RATE          (30*DEG)
 
 // Altitude PID tuning, input rel alt, output throttle
@@ -49,7 +49,7 @@
 #define OFFB_PID_ALT_DK               1.0
 
 // Pitch PID tuning, intput Y metres, output rad
-#define OFFB_PITCH_TARGET                0.5 // metres ahead
+#define OFFB_PITCH_TARGET                0.4 // metres ahead
 #define OFFB_PID_PITCH_MAX_OUTPUT      (10*DEG) // pitch angle rad
 #define OFFB_PID_PITCH_MIN_OUTPUT     (-10*DEG)
 #define OFFB_PID_PITCH_MAX_OUTPUT_RAMP (10*DEG)
@@ -80,9 +80,9 @@
 #define OFFB_PID_YAW_MIN_OUTPUT       (-30*DEG)
 #define OFFB_PID_YAW_MAX_OUTPUT_RAMP   (15*DEG)
 #define OFFB_PID_YAW_BIAS                0.0 // output bias
-#define OFFB_PID_YAW_P                  -0.1
+#define OFFB_PID_YAW_P                  -0.5
 #define OFFB_PID_YAW_I                   0.0
-#define OFFB_PID_YAW_D                  -0.3
+#define OFFB_PID_YAW_D                  -1.0
 #define OFFB_PID_YAW_F                   0.0
 #define OFFB_PID_YAW_DTC                 1.0
 #define OFFB_PID_YAW_DK                  1.0
