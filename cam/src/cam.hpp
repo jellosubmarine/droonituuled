@@ -80,6 +80,7 @@ private:
   std::vector<cv::Point2f> centroids;
   cv::Mat distances;
   cv::Point2f bottom_centroid, mean_centroid;
+  std::vector<float> c_x, c_y;
   float Z;
   int W;
   #ifdef DT_BUILD_DEV

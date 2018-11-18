@@ -53,6 +53,6 @@
     </include>
   </group>
 
-  <node name="visualizer1_node" pkg="visualizer1" type="visualizer1_node" />
+   <!-- <node name="robotex_cam_main" pkg="robotex_cam" type="robotex_cam_main" /> -->
 
 </launch>

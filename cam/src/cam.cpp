@@ -39,6 +39,19 @@ void mean_point(const std::vector<cv::Point2f>& points, cv::Point2f& output) {
   output.y /= float(points.size());
 }
 
+// Function for covariance
+  float cov(vector<float>& A, std::vector<float>& B){  
+      float n = A.size();  
+      float ma = accumulate( A.begin(), A.end(), 0.0)/A.size(); 
+      float mb = accumulate( B.begin(), B.end(), 0.0)/B.size(); 
+      float cov = 0;
+      for (int i = 0; i < n; ++i) {
+        cov +=  (A[i]-ma) * (B[i]-mb);
+        
+      }
+      return cov * (1/n);
+    }
+
 
 /* CONSTRUCTORS AND CALLBACKS */
 
@@ -215,11 +228,45 @@ void Visuals::process() {
     mean_centroid.x -= CAM_FRAME_OFFSET_X;
     mean_centroid.y = CAM_FRAME_HEIGHT - mean_centroid.y - CAM_FRAME_OFFSET_Y; // Conv Y to bottom up
 
-    bottom_centroid.x = centroids[0].x - CAM_FRAME_OFFSET_X;
+    // Uncomment Z from here, if you want direction from owest point to middle.
+
+/*     bottom_centroid.x = centroids[0].x - CAM_FRAME_OFFSET_X;
     bottom_centroid.y = CAM_FRAME_HEIGHT - centroids[0].y - CAM_FRAME_OFFSET_Y;
 
     Z = atan2( mean_centroid.x - bottom_centroid.x,
-               mean_centroid.y - bottom_centroid.y );
+               mean_centroid.y - bottom_centroid.y ); */
+
+    ////////////////////////////////////////////////////////////////////////// NEW
+
+    // PCA implementation
+
+    c_x.clear();
+    c_y.clear();
+    for (int i = 0; i < centroids.size(); ++i) {  // To calculate cov, we need vectors with components
+      c_x.push_back(centroids[i].x);
+      c_y.push_back(centroids[i].y);
+    }
+
+    float XX = cov(c_x, c_x); // Cov matrix elements
+    float XY = cov(c_x, c_y);
+    float YX = cov(c_y, c_x);
+    float YY = cov(c_y, c_y);
+    
+
+    // We get 2 eigenvalues, we need the bigger one.
+
+    float e_val1 = 0.5*( XX+YY + sqrt( pow((XX+YY),2) - 4*(XX*YY-XY*YX) )); // first root
+    float e_val2 = 0.5*( XX+YY - sqrt( pow((XX+YY),2) - 4*(XX*YY-XY*YX) )); // second root
+    float e_val = max(e_val1,e_val2);
+
+    // Get the direction. 
+
+    Z = atan2(1,XY/(e_val - XX)) - CV_PI/2; // pi/2 subtracted to get values from -pi/2 to pi/2
+
+    // Note, that when drawing the direction vector, another pi/2 is subtracted to make the "0"
+    // point upwards.
+    
+    ////////////////////////////////////////////////////////////////////////// NEW
   }
   else {
     Z = 0.0;
@@ -248,6 +295,9 @@ void Visuals::process() {
   point_pub.publish(msg);
 
 
+  int length = 100;
+  Point P2;
+
   // DRAW VISUALS
   #ifdef DT_BUILD_DEV
     //canny_output = canny_output * 0.2;
@@ -259,11 +309,15 @@ void Visuals::process() {
 
     // Draw average and bottom markers
     if (W > 0) {
-      Point2f XY(
+      Point2f midXY(
         static_cast<float>(mean_centroid.x + CAM_FRAME_OFFSET_X),
         static_cast<float>(CAM_FRAME_HEIGHT - mean_centroid.y - CAM_FRAME_OFFSET_Y));
-      circle(frame, XY, 10, Scalar(30,200,50), -1, 8, 0);
-      circle(frame, centroids[0], 7, Scalar(30,150,30), -1, 8, 0);
+      circle(frame, midXY, 10, Scalar(30,200,50), -1, 8, 0);
+      //circle(frame, centroids[0], 7, Scalar(30,150,30), -1, 8, 0);
+      P2.x =  (int)round(midXY.x + length * cos(Z - CV_PI/2));
+      P2.y =  (int)round(midXY.y + length * sin(Z - CV_PI/2)); 
+      cv::arrowedLine( frame,  midXY, P2, Scalar(30,10,150), 2, 8, 0, 0.1);
+
     }
 
     // Draw mean velocity vector
