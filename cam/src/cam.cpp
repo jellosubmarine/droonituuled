@@ -142,7 +142,11 @@ void Visuals::process() {
 
 
   // Process and find contours
-  blur(frame_gray, blurr, Size(CAM_BLUR_SIZE, CAM_BLUR_SIZE), Point(-1, -1));       // Blur image
+  cvtColor(frame, frame_HSV, COLOR_BGR2HSV);
+  inRange(frame_HSV, Scalar(0, 0, 0), Scalar(180, CAM_SATURATION_THRESH, 255), gray_mask);
+  bitwise_and(frame,frame, proc, mask=gray_mask);
+  cvtColor(proc, masked_gray, CV_BGR2GRAY);
+  blur(masked_gray, blurr, Size(CAM_BLUR_SIZE, CAM_BLUR_SIZE), Point(-1, -1));       // Blur image
   Canny(blurr, dil, CAM_CANNY_THR_LOW, CAM_CANNY_THR_HIGH, CAM_CANNY_KERNEL_SIZE ); // Find edges
   dilate(dil, erod, Mat(), Point(-1, -1), 4, 1, 1);                                 // Get rid of holes
   //erode(dil, dil, Mat(), Point(-1, -1), 4, 1, 1);
@@ -350,6 +354,7 @@ void Visuals::process() {
 
     cv::multiply(frame, mask3, frame);
     imshow(CAM_WINDOW_NAME, frame);
+   
     waitKey(1);
 
     /*

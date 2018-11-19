@@ -21,6 +21,7 @@
 #define CAM_CONTOUR_LIM_LOW   1000
 #define CAM_CONTOUR_LIM_HIGH 10000
 #define CAM_CONTOUR_OUTLIER      1.5  // Distance factor
+#define CAM_SATURATION_THRESH   50
 
 #define CAM_OF_REFRESH_INTERVAL 15  // frames
 #define CAM_OF_MAX_LEVELS        2  // OF pyramid levels
@@ -53,7 +54,7 @@ private:
   bool image_flag;
 
   // Frame storage
-  cv::Mat frame, frame_gray, frame_gray_old;
+  cv::Mat frame, frame_gray, frame_gray_old, frame_HSV;
   ros::Time frame_time, frame_old_time;
 
   // Optical flow
@@ -71,8 +72,8 @@ private:
 
   // Image processing storage
   cv::Mat img_gray, img_bw, img_final;
-  cv::Mat blurr, erod, dil;
-  cv::Mat mask, canny_output;
+  cv::Mat blurr, erod, dil, proc;;
+  cv::Mat mask,gray_mask, canny_output, masked_gray;
 
   std::vector<std::vector<cv::Point> > contours;
   std::vector<cv::Moments> mu;
