@@ -54,7 +54,7 @@ private:
   bool image_flag;
 
   //Parameter variables
-  int CAM_SATURATION_THRESH = 50;
+  int CAM_SATURATION_THRESH;
 
   // Frame storage
   cv::Mat frame, frame_gray, frame_gray_old, frame_HSV;
