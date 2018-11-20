@@ -138,7 +138,7 @@ void OffbController::loop() {
         if (camData.position.z) {
           ROS_INFO("Cleared LOST status");
           CLEAR_BIT(flightStatus, FLIGHT_STATUS_LOST);
-          yawPID.initFirstInput(camData.yaw, t);
+          yawPID.initFirstInput(camData.yaw + OFFB_YAW_TARGET_OFFSET, t);
         }
       }
 
@@ -146,7 +146,7 @@ void OffbController::loop() {
       // NOT LOST
       else {
         // Turn to correct heading
-        yawPID.update(camData.yaw, t);
+        yawPID.update(camData.yaw + OFFB_YAW_TARGET_OFFSET, t);
         rawAtt.body_rate.z = yawPID.output;
 
         // Convert camera data
@@ -169,7 +169,7 @@ void OffbController::loop() {
               relAlt > OFFB_ALT_TARGET + OFFB_NAV_ALT_MARGIN ||
               fabs(flightData.climb) > OFFB_NAV_MAX_CLIMB )
           {
-            ROS_INFO("Altitude margin breach. Stopped navigation.");
+            ROS_INFO("Altitude unstable. Stopped navigation.");
             CLEAR_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
           }
         }

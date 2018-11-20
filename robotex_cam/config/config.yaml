@@ -3,3 +3,8 @@
 # Threshold parameters
 threshold:
   saturation: 50
+
+
+# Optical flow
+of:
+  refresh_interval: 15  # frames    

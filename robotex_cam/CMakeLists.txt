@@ -140,6 +140,7 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable( ${PROJECT_NAME}_main
 	src/cam.cpp
+	src/cam_loop.cpp
 )
 
 ## Rename C++ executable without prefix

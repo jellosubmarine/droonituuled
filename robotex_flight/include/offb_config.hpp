@@ -1,12 +1,12 @@
 #ifndef OFFB_CONFIG_INCLUDED
 #define OFFB_CONFIG_INCLUDED
 
-//#define OFFB_CONTROLLER_MODE_SIMPLE
+// #define OFFB_CONTROLLER_MODE_SIMPLE
 #define OFFB_CONTROLLER_MODE_NAV
 #define OFFB_WAIT_FOR_ARM      // Comment out for in-node arming
 
 #ifdef DT_BUILD_DEV
-  //#define OFFB_SHOW_VISUALS
+  // #define OFFB_SHOW_VISUALS
 #endif
 
 
@@ -32,7 +32,7 @@
 #define OFFB_CAM_OFFSET_Y      0.0
 
 #define DEG 0.017453293 // deg2rad conversion
-#define OFFB_ROLL_YAW_COUPL           0.01
+#define OFFB_ROLL_YAW_COUPL           0.02
 #define OFFB_LOST_YAW_RATE          (30*DEG)
 
 // Altitude PID tuning, input rel alt, output throttle
@@ -52,9 +52,9 @@
 #define OFFB_PITCH_TARGET                0.4 // metres ahead
 #define OFFB_PID_PITCH_MAX_OUTPUT      (10*DEG) // pitch angle rad
 #define OFFB_PID_PITCH_MIN_OUTPUT     (-10*DEG)
-#define OFFB_PID_PITCH_MAX_OUTPUT_RAMP (10*DEG)
+#define OFFB_PID_PITCH_MAX_OUTPUT_RAMP (20*DEG)
 #define OFFB_PID_PITCH_BIAS              0.0 // output bias
-#define OFFB_PID_PITCH_P               (-0.3/9.81)
+#define OFFB_PID_PITCH_P               (-0.2/9.81)
 #define OFFB_PID_PITCH_I                 0.0
 #define OFFB_PID_PITCH_D               (+1.0/9.81)
 #define OFFB_PID_PITCH_F                 0.0
@@ -62,24 +62,25 @@
 #define OFFB_PID_PITCH_DK                1.0
 
 // Roll PID tuning, input X px, output rad
-#define OFFB_ROLL_TARGET                 0.0 // metres right
-#define OFFB_PID_ROLL_MAX_OUTPUT       (10*DEG) // Bank angle rad
+#define OFFB_ROLL_TARGET                 0.0        // metres right
+#define OFFB_PID_ROLL_MAX_OUTPUT       (10*DEG)     // Bank angle rad
 #define OFFB_PID_ROLL_MIN_OUTPUT      (-10*DEG)
-#define OFFB_PID_ROLL_MAX_OUTPUT_RAMP  (10*DEG)
-#define OFFB_PID_ROLL_BIAS               0.0 // output bias
-#define OFFB_PID_ROLL_P                (-0.3/9.81) // bank from accel
+#define OFFB_PID_ROLL_MAX_OUTPUT_RAMP  (20*DEG)
+#define OFFB_PID_ROLL_BIAS               0.0        // output bias
+#define OFFB_PID_ROLL_P                (-0.2/9.81)  // bank from accel
 #define OFFB_PID_ROLL_I                  0.00
-#define OFFB_PID_ROLL_D                (+1.0/9.81)
+#define OFFB_PID_ROLL_D                (+1.2/9.81)
 #define OFFB_PID_ROLL_F                  0.0
 #define OFFB_PID_ROLL_DTC                1.0
 #define OFFB_PID_ROLL_DK                 1.0
 
 // Yaw Rate PID tuning, input rad, output rad/s
-#define OFFB_YAW_TARGET                  0.0 // brg to point, rad
+#define OFFB_YAW_TARGET                  0.0        // brg to point, rad
+#define OFFB_YAW_TARGET_OFFSET         (0*DEG)
 #define OFFB_PID_YAW_MAX_OUTPUT        (30*DEG)
 #define OFFB_PID_YAW_MIN_OUTPUT       (-30*DEG)
 #define OFFB_PID_YAW_MAX_OUTPUT_RAMP   (15*DEG)
-#define OFFB_PID_YAW_BIAS                0.0 // output bias
+#define OFFB_PID_YAW_BIAS                0.0        // output bias
 #define OFFB_PID_YAW_P                  -0.5
 #define OFFB_PID_YAW_I                   0.0
 #define OFFB_PID_YAW_D                  -1.0
