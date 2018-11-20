@@ -1,5 +1,0 @@
-#Parameters for the camera node
-
-# Threshold parameters
-threshold:
-  saturation: 50
