@@ -68,7 +68,7 @@ Visuals::Visuals(ros::NodeHandle &nh_) : it_(nh_)
   }
   else
   {
-    ROS_ERROR("Failed to get param 'threshold/saturation'");
+    ROS_ERROR("Failed to get param 'threshold/saturation', using default");
   }
 
   // End read parameters
