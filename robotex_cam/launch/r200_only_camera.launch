@@ -1,5 +1,7 @@
 <!-- Sample launch file for modifying the parameters of RealSense R200 camera -->
 <launch>
+  <rosparam file="$(find robotex_cam)/config/config.yaml" command="load" />
+
   <arg name="camera"       default="camera" />
   <arg name="camera_type"  default="R200" /> <!-- Type of camera -->
   <arg name="serial_no"    default="" />
@@ -52,7 +54,7 @@
       <arg name="usb_port_id"  value="$(arg usb_port_id)" />
     </include>
   </group>
-
-   <!-- <node name="robotex_cam_main" pkg="robotex_cam" type="robotex_cam_main" /> -->
+  <!-- Remove output="screen" or change it to "log" if you dont want spam -->
+   <node name="robotex_cam_main" pkg="robotex_cam" type="robotex_cam_main"  output="screen" />
 
 </launch>
