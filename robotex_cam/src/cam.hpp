@@ -96,7 +96,7 @@ private:
   cv::Mat distances;
   cv::Point2f bottom_centroid, mean_centroid;
   std::vector<float> c_x, c_y;
-  float Z;
+  float Z, Z1, Z2;
   int W;
 
   #ifdef DT_BUILD_DEV

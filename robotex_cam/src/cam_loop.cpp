@@ -107,7 +107,7 @@ void Visuals::process() {
   inRange(frame_HSV, Scalar(0, 0, 0), Scalar(255, rp_sat_thr, 255), hsv_mask);
   bitwise_and(hsv_mask, edge_mask, total_mask);
   bitwise_and(frame_gray, total_mask, frame_gray_masked);
-
+ 
   // Update optical flow tracked points at given interval
   if (of_refresh_counter >= rp_of_refresh_int) {
     of_refresh_counter = 0;
@@ -115,10 +115,10 @@ void Visuals::process() {
 
     goodFeaturesToTrack(frame_gray_masked_old, of_old_points, CAM_GF_MAX_POINTS,
         CAM_GF_QUALITY, CAM_GF_MIN_DIST, cv::noArray(), CAM_GF_BLOCK_SIZE);
-
+   
     ROS_INFO_STREAM("Found " << of_old_points.size() << " OF points");
   }
-
+  
   // Calculate optical flow
   if (!of_old_points.empty()) {
     calcOpticalFlowPyrLK(frame_gray_masked_old, frame_gray_masked,
@@ -126,7 +126,7 @@ void Visuals::process() {
                          of_status, of_err, of_win_size,
                          CAM_OF_MAX_LEVELS, of_criteria);
   }
-
+  
   // Calculate velocities
   of_velocities.clear();
   of_mean_velocity.x = 0.0;
@@ -142,7 +142,7 @@ void Visuals::process() {
       of_mean_velocity.y += of_velocities[i].y;
     }
   }
-
+  
   if (of_velocities.size() > 0) {
     of_mean_velocity.x = of_mean_velocity.x / float(of_velocities.size()) /
          (frame_time - frame_old_time).toSec() / float(CAM_FRAME_WIDTH) * 2.0f;   // Normalised to half frame
@@ -165,7 +165,7 @@ void Visuals::process() {
   // Clear storage vectors
   mu.clear();
   centroids.clear();
-
+  weightedCentroids.clear();
   // Calculate contour moments
   for (size_t i = 0; i < contours.size(); ++i) {  // Look through all contours
     if (contourArea(contours[i]) > CAM_CONTOUR_LIM_LOW &&
@@ -194,24 +194,24 @@ void Visuals::process() {
 
   W = centroids.size();  // Assign here to avoid repeated size() calling
   if (W > 0) {
-    // Find outliers using brute force
+/*      // Find outliers using brute force
     distances = cv::Mat::zeros(W, W, CV_32F);
     float min_dist_abs = FLT_MAX;  // Min distance betw two centroids
     float min_dist_cur;            // Min distance for current centroid
     int i, j;
-
+ */
     // Determine minimum nearest neighbour distance
-    for (i = 0; i < W; ++i) {
+/*     for (i = 0; i < W; ++i) {
       for (j = i+1; j < W; ++j) {
         distances.at<float>(i, j) = dist2(centroids[i], centroids[j]);
         if (distances.at<float>(i, j) < min_dist_abs) {
           min_dist_abs = distances.at<float>(i, j);
         }
       }
-    }
+    } */
 
     // Find outliers
-    for (i = 0; i < W; ++i) {
+/*     for (i = 0; i < W; ++i) {
       min_dist_cur = FLT_MAX;
 
       // Compare to centroids before this one
@@ -232,12 +232,12 @@ void Visuals::process() {
       if (min_dist_cur > CAM_CONTOUR_OUTLIER * min_dist_abs) {
         centroids[i].x = FLT_MAX;
       }
-    }
-
-    // Remove outliers
+    } */
+/* 
+         // Remove outliers
     for (i = 0; i < centroids.size(); ++i) {
       if (centroids[i].x == FLT_MAX) {
-        /*
+        
         ROS_INFO_STREAM(
           "Dropped point [" <<
           centroids[i].x - CAM_FRAME_OFFSET_X <<
@@ -245,22 +245,40 @@ void Visuals::process() {
           CAM_FRAME_HEIGHT - centroids[i].y - CAM_FRAME_OFFSET_Y <<
           "], min dist sq = " << largest_min_dist
         );
-        */
+        
         centroids.erase(centroids.begin() + i);
         --i;
       }
     }
-    mean_point(centroids, &mean_centroid);
-    if (centroids.size() > 1) {
-      bottom_centroid.x = convertXCoord(centroids[0].x);
-      bottom_centroid.y = convertYCoord(centroids[0].y);
+ */
+    /////////////////////////////////////////////////////////////////////////////
+   
+    /*------------- // FINDING WEIGHTED CENTROIDS // -----------------*/
+    
+    for (int i = 0; i < W; ++i) {
+      weightedCentroids.push_back(cv::Point2f
+      ( centroids[i].x - ( centroids[i].x - ( CAM_FRAME_WIDTH /2 ) ) /2 , 
+       centroids[i].y ));
+    } 
+    // centroids[i].x - sqrt( CAM_FRAME_WIDTH /2 ) ) for sqrt weight.
+
+    // Shift all the centroids (difference from centre) / 2 towards the centre.
+    // Points further from the centre line get shifter more.
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    mean_point(weightedCentroids, &mean_centroid);
+    if (weightedCentroids.size() > 1) {
+      bottom_centroid.x = convertXCoord(weightedCentroids[0].x);
+      bottom_centroid.y = convertYCoord(weightedCentroids[0].y);
     } else {
       bottom_centroid.x = 0.0;
       bottom_centroid.y = -CAM_FRAME_OFFSET_Y;
     }
 
     Z = hdgFromBottomPoint();
-    // Z = hdgFromLineFit();
+    //Z = hdgFromLineFit();
+    //Z = (Z1+Z2)/2;
     // Z = hdgFromPca();
   } else {
     mean_centroid.x = 0.0;
@@ -298,7 +316,7 @@ void Visuals::process() {
 
   // Draw centroid markers
   for (size_t i = 1; i < W; i++) {
-    circle(frame, centroids[i], 4, Scalar(100, 80, 50), 2, 8, 0);
+    circle(frame, weightedCentroids[i], 4, Scalar(100, 80, 50), 2, 8, 0);
   }
 
   // Draw average and bottom markers
@@ -313,7 +331,7 @@ void Visuals::process() {
       midPoint.y - CAM_VIS_LENGTH * cos(Z));
 
       circle(frame, midPoint, 10, Scalar(30, 200, 50), -1, 8, 0);
-      circle(frame, centroids[0], 7, Scalar(100, 80, 50), -1, 8, 0);
+      circle(frame, weightedCentroids[0], 7, Scalar(100, 80, 50), -1, 8, 0);
       cv::arrowedLine(frame, midPoint, hdgPoint, Scalar(150, 50, 30), 2, 8, 0, 0.1);
   }
 
