@@ -1,12 +1,12 @@
-//#include "dt_config.hpp"
-#include "offb_controller.hpp"
-#include "offb_config.hpp"
-#include "offb_math.hpp"
-
 #include <cmath>
+
 #include "mavros_msgs/AttitudeTarget.h"
 #include "geometry_msgs/Quaternion.h"
 
+#include "dt_config.hpp"
+#include "offb_controller.hpp"
+#include "offb_config.hpp"
+#include "offb_math.hpp"
 
 #ifdef OFFB_CONTROLLER_MODE_NAV
 
@@ -35,7 +35,7 @@ void OffbController::loop() {
   geometry_msgs::Point floorPoint;
   double yaw = 0.0, pitch = 0.0, roll = 0.0;
 
-  altPID.target = OFFB_ALT_TARGET;
+  altPID.target = rp_pid_alt_target;
   pitchPID.target = OFFB_PITCH_TARGET;
   rollPID.target = OFFB_ROLL_TARGET;
   yawPID.target = OFFB_YAW_TARGET;
@@ -165,8 +165,8 @@ void OffbController::loop() {
                           pitchPID.output, 0.0, &(rawAtt.orientation));
 
           // Check for altitude outside margins
-          if (relAlt < OFFB_ALT_TARGET - OFFB_NAV_ALT_MARGIN ||
-              relAlt > OFFB_ALT_TARGET + OFFB_NAV_ALT_MARGIN ||
+          if (relAlt < rp_pid_alt_target - OFFB_NAV_ALT_MARGIN ||
+              relAlt > rp_pid_alt_target + OFFB_NAV_ALT_MARGIN ||
               fabs(flightData.climb) > OFFB_NAV_MAX_CLIMB )
           {
             ROS_INFO("Altitude unstable. Stopped navigation.");
@@ -182,8 +182,8 @@ void OffbController::loop() {
           rawAtt.orientation.z = 0.0;
 
           // Check if ready to navigate
-          if (relAlt > OFFB_ALT_TARGET - OFFB_NAV_ALT_MARGIN &&
-              relAlt < OFFB_ALT_TARGET + OFFB_NAV_ALT_MARGIN &&
+          if (relAlt > rp_pid_alt_target - OFFB_NAV_ALT_MARGIN &&
+              relAlt < rp_pid_alt_target + OFFB_NAV_ALT_MARGIN &&
               fabs(flightData.climb) < OFFB_NAV_MAX_CLIMB )
           {
             ROS_INFO("Starting navigation");
@@ -191,20 +191,22 @@ void OffbController::loop() {
             pitchPID.initFirstInput(camData.position.y, t);
             rollPID.initFirstInput(camData.position.x, t);
           }
-        } // Navigate
-      } // lost
-    } // airborne
+        }  // Navigate
+      }  // lost
+    }  // airborne
 
-    //debug(rawAtt.orientation.w, rawAtt.orientation.x, rawAtt.orientation.y, rawAtt.orientation.z);
+    // debug(rawAtt.orientation.w, rawAtt.orientation.x, rawAtt.orientation.y, rawAtt.orientation.z);
     debug(floorPoint.y, floorPoint.x, pitchPID.output*180.0/M_PI, rollPID.output*180.0/M_PI);
-    //debug(camData.yaw*180.0/M_PI, yawPID.output*180.0/M_PI, -imuData.angular_velocity.z*180.0/M_PI, flightData.altitude);
-    //debug(rawAtt.thrust, flightData.altitude, 0.0, 0.0);
-		raw_pub.publish(rawAtt);
+    // debug(camData.yaw*180.0/M_PI, yawPID.output*180.0/M_PI, -imuData.angular_velocity.z*180.0/M_PI, flightData.altitude);
+    // debug(rawAtt.thrust, flightData.altitude, 0.0, 0.0);
+    raw_pub.publish(rawAtt);
+
     #ifdef OFFB_SHOW_VISUALS
       updateVisuals(floorPoint.x, floorPoint.y, camData.yaw);
     #endif
-		ros::spinOnce();
-		loopRate.sleep();
+    
+    ros::spinOnce();
+    loopRate.sleep();
   }
 
   ROS_INFO("Flight loop finished");

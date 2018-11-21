@@ -12,6 +12,9 @@
  * Set up mavros communication, connect to FCU, arm vehicle and zero altitude
  */
 int OffbController::init() {
+  // Load ros parameters
+  readParam("pid/altitude/target", &rp_pid_alt_target, 1.5f);
+
   // Set up comms
   ROS_INFO("Setting up ROS comms");
   arm_client = nh.serviceClient<mavros_msgs::CommandBool> ("/mavros/cmd/arming");
@@ -61,22 +64,22 @@ int OffbController::init() {
     initVisuals();
   #endif
 
-	// Connect to FCU
-	ROS_INFO("Waiting for FCU connection");
+  // Connect to FCU
+  ROS_INFO("Waiting for FCU connection");
   ros::Rate loopRate(OFFB_START_LOOP_RATE);
 
   ros::Timer t = startTimeout(OFFB_GEN_TIMEOUT);
-	while (ros::ok() && !currentState.connected && !timeout) {
-		ros::spinOnce();
-		loopRate.sleep();
-	}
+  while (ros::ok() && !currentState.connected && !timeout) {
+    ros::spinOnce();
+    loopRate.sleep();
+  }
   t.stop();
 
-	if (ros::ok() && currentState.connected) ROS_INFO("Connected to FCU");
+  if (ros::ok() && currentState.connected) ROS_INFO("Connected to FCU");
 
-	if (!setMode("STABILIZE")) return 0;     // Enter stabilize mode
-	if (!armVehicle()) return 0;             // Arm vehice
-	if (!setMode("GUIDED_NOGPS")) return 0;  // Set guided_nogps mode
+  if (!setMode("STABILIZE")) return 0;     // Enter stabilize mode
+  if (!armVehicle()) return 0;             // Arm vehice
+  if (!setMode("GUIDED_NOGPS")) return 0;  // Set guided_nogps mode
 
   zeroAltitude();
   return 1;
@@ -119,6 +122,18 @@ void OffbController::timeoutCB (const ros::TimerEvent&){
 
 
 /** UTILITIES **/
+
+/**
+ * Reads ros parameters from conf file
+ */
+template<typename T>
+void OffbController::readParam(const std::string& param_name, T* var, const T& defaultVal) {
+  if (nh.param(param_name, *var, defaultVal)) {
+    ROS_INFO_STREAM("Got param: " << param_name << " = " << *var);
+  } else {
+    ROS_ERROR_STREAM("Failed to get param " << param_name << ", default = " << defaultVal);
+  }
+}
 
 /**
  * Creates and starts a timeout timer

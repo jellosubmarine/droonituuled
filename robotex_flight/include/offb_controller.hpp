@@ -1,15 +1,15 @@
 #ifndef OFFB_CONTROLLER_INCLUDED
 #define OFFB_CONTROLLER_INCLUDED
 
+#include <string>
+
 #include "ros/ros.h"
 #include "mavros_msgs/State.h"
 #include "mavros_msgs/VFR_HUD.h"
 #include "sensor_msgs/Imu.h"
 #include "geometry_msgs/Quaternion.h"
-//#include "geometry_msgs/QuaternionStamped.h"
 #include "geometry_msgs/PointStamped.h"
 #include "mavros_msgs/PositionTarget.h"
-
 
 #include "opencv2/core.hpp"
 
@@ -22,7 +22,7 @@ class OffbController {
 public:
   int init();
   void loop();  // Main flight loop
-  //static void shutdown();
+  // static void shutdown();
 
   // Visuals
   #ifdef OFFB_SHOW_VISUALS
@@ -31,11 +31,11 @@ public:
   #endif
 
   // Callbacks
-  void stateCB (const mavros_msgs::State::ConstPtr& msg);
-  void timeoutCB (const ros::TimerEvent&);
-  void vfrCB (const mavros_msgs::VFR_HUD::ConstPtr& msg);
-  void imuCB (const sensor_msgs::Imu::ConstPtr& msg);
-  void camCB (const mavros_msgs::PositionTarget::ConstPtr& msg);
+  void stateCB(const mavros_msgs::State::ConstPtr& msg);
+  void timeoutCB(const ros::TimerEvent&);
+  void vfrCB(const mavros_msgs::VFR_HUD::ConstPtr& msg);
+  void imuCB(const sensor_msgs::Imu::ConstPtr& msg);
+  void camCB(const mavros_msgs::PositionTarget::ConstPtr& msg);
 
   // Ros Comms
   ros::NodeHandle nh;
@@ -52,6 +52,7 @@ public:
 
 private:
   // Utilities
+  template<typename T> void readParam(const std::string& param_name, T* var, const T& defaultVal);
   int setMode(std::string modeName);
   int armVehicle();
   void zeroAltitude();
@@ -66,18 +67,19 @@ private:
   // Data storage
   mavros_msgs::State currentState;
   mavros_msgs::VFR_HUD flightData;
-  //geometry_msgs::QuaternionStamped camData;
   mavros_msgs::PositionTarget camData;
   sensor_msgs::Imu imuData;
   double zeroAlt;
   bool timeout;
+
+  // Ros parameters
+  float rp_pid_alt_target;
 
   // Visuals
   #ifdef OFFB_SHOW_VISUALS
     void drawGrid(double step);
     cv::Mat displayMatrix;
   #endif
-
 
   // Debug
   void debug(double w, double x, double y, double z);

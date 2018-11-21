@@ -11,10 +11,12 @@ double dist2(const cv::Point2f &p1, const cv::Point2f &p2) {
   return (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
 }
 
+// Converts x-coordinate from camera to flight frame
 float convertXCoord(float x) {
   return x - CAM_FRAME_OFFSET_X;
 }
 
+// Converts y-coordinate from camera to flight frame
 float convertYCoord(float y) {
   return CAM_FRAME_HEIGHT - y - CAM_FRAME_OFFSET_Y;
 }
