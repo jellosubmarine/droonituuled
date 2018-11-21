@@ -7,6 +7,7 @@
 
 #ifdef DT_BUILD_DEV
   // #define OFFB_SHOW_VISUALS
+  // #define OFFB_VERBOSE
 #endif
 
 
@@ -18,10 +19,10 @@
 #define OFFB_DEBUG_START_DELAY  1.0  // sec
 
 #define OFFB_MIN_FLIGHT_ALT    0.1   // m, less is considered on ground
-#define OFFB_NAV_ALT_MARGIN    0.3   // m, navigate when alt +- margin
-#define OFFB_NAV_MAX_CLIMB     0.3   // m/s
-#define OFFB_ABORT_ALT         2.0   // m, max allowed altitude
-#define OFFB_ABORT_LOST_TIME  10.0   // s, max time to be lost
+// #define OFFB_NAV_ALT_MARGIN    0.3   // m, navigate when alt +- margin
+// #define OFFB_NAV_MAX_CLIMB     0.3   // m/s
+// #define OFFB_ABORT_ALT         2.0   // m, max allowed altitude
+// #define OFFB_ABORT_LOST_TIME  10.0   // s, max time to be lost
 
 #define OFFB_CAM_ANGLE      0.4368   // Camera pitch from ground normal
 #define OFFB_CAM_FOV_X     0.69813   // 1.39626
@@ -36,27 +37,13 @@
 #define OFFB_LOST_YAW_RATE   (30*DEG)
 
 // Altitude PID tuning, input rel alt, output throttle
-// #define OFFB_ALT_TARGET               1.5 // metres
-#define OFFB_PID_ALT_MAX_OUTPUT       1.0 // throttle
-#define OFFB_PID_ALT_MIN_OUTPUT       0.0 // throttle
-#define OFFB_PID_ALT_MAX_OUTPUT_RAMP  1.0 // throttle per sec
-#define OFFB_PID_ALT_BIAS             0.5 //0.0 // output bias
-#define OFFB_PID_ALT_P                0.07 //0.20 //0.2
-#define OFFB_PID_ALT_I                0.00 //0.06 //0.06
-#define OFFB_PID_ALT_D                0.07 //0.07 //0.02
 #define OFFB_PID_ALT_F                0.0
 #define OFFB_PID_ALT_DTC              1.0
 #define OFFB_PID_ALT_DK               1.0
 
 // Pitch PID tuning, intput Y metres, output rad
-#define OFFB_PITCH_TARGET                0.4 // metres ahead
-#define OFFB_PID_PITCH_MAX_OUTPUT      (10*DEG) // pitch angle rad
-#define OFFB_PID_PITCH_MIN_OUTPUT     (-10*DEG)
-#define OFFB_PID_PITCH_MAX_OUTPUT_RAMP (20*DEG)
-#define OFFB_PID_PITCH_BIAS              0.0 // output bias
-#define OFFB_PID_PITCH_P               (-0.2/9.81)
+#define OFFB_PID_PITCH_BIAS              0.0  // output bias
 #define OFFB_PID_PITCH_I                 0.0
-#define OFFB_PID_PITCH_D               (+1.0/9.81)
 #define OFFB_PID_PITCH_F                 0.0
 #define OFFB_PID_PITCH_DTC               1.0
 #define OFFB_PID_PITCH_DK                1.0

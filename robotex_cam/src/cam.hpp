@@ -19,7 +19,7 @@
 #define CAM_FRAME_HEIGHT       480
 #define CAM_FRAME_OFFSET_X     320
 #define CAM_FRAME_OFFSET_Y     240
-#define CAM_FRAME_MASK_WIDTH   1
+// #define CAM_FRAME_MASK_WIDTH   0
 
 #define CAM_CANNY_THR_LOW      121
 #define CAM_CANNY_THR_HIGH     (CAM_CANNY_THR_LOW * 1.5)
@@ -66,6 +66,7 @@ private:
   template<typename T> void readParam(const ros::NodeHandle& nh, const std::string& param_name, T* var, const T& defaultVal);
   int rp_sat_thr;
   int rp_of_refresh_int;
+  int rp_frame_mask_width;
 
   // Frame storage
   bool image_flag;

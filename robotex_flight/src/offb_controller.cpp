@@ -13,10 +13,29 @@
  */
 int OffbController::init() {
   // Load ros parameters
+  readParam("limit/abort/altitude", &rp_lim_abort_alt, 2.0f);
+  readParam("limit/abort/lost_time", &rp_lim_abort_lost_time, 10.0f);
+  readParam("limit/nav/alt_margin", &rp_lim_nav_alt, 0.3f);
+  readParam("limit/nav/max_vs", &rp_lim_nav_vs, 0.3f);
   readParam("pid/altitude/target", &rp_pid_alt_target, 1.5f);
+  readParam("pid/altitude/output/min", &rp_pid_alt_out_min, 0.0f);
+  readParam("pid/altitude/output/max", &rp_pid_alt_out_max, 1.0f);
+  readParam("pid/altitude/output/ramp", &rp_pid_alt_out_ramp, 1.0f);
+  readParam("pid/altitude/output/bias", &rp_pid_alt_out_bias, 0.0f);
+  readParam("pid/altitude/p", &rp_pid_alt_p, 0.0f);
+  readParam("pid/altitude/i", &rp_pid_alt_i, 0.0f);
+  readParam("pid/altitude/d", &rp_pid_alt_d, 0.0f);
+  readParam("pid/pitch/target", &rp_pid_pitch_target, 1.0f);
+  readParam("pid/pitch/output/min", &rp_pid_pitch_out_min, -1.0f);
+  readParam("pid/pitch/output/max", &rp_pid_pitch_out_max, +1.0f);
+  readParam("pid/pitch/output/ramp", &rp_pid_pitch_out_ramp, 1.0f);
+  readParam("pid/pitch/p", &rp_pid_pitch_p, 0.0f);
+  readParam("pid/pitch/d", &rp_pid_pitch_d, 0.0f);
 
   // Set up comms
-  ROS_INFO("Setting up ROS comms");
+  #ifdef OFFB_VERBOSE
+    ROS_INFO("Setting up ROS comms");
+  #endif
   arm_client = nh.serviceClient<mavros_msgs::CommandBool> ("/mavros/cmd/arming");
   mode_client = nh.serviceClient<mavros_msgs::SetMode> ("/mavros/set_mode");
 
@@ -29,20 +48,20 @@ int OffbController::init() {
   debug_pub = nh.advertise<geometry_msgs::Quaternion> (DT_DEBUG_TOPIC, 3, false);
 
   // Configure PID-s
-  ROS_INFO("Configuring PIDs");
+  #ifdef OFFB_VERBOSE
+    ROS_INFO("Configuring PIDs");
+  #endif
   altPID.conf(
-    OFFB_PID_ALT_P, OFFB_PID_ALT_I, OFFB_PID_ALT_D, OFFB_PID_ALT_F,
-    OFFB_PID_ALT_DTC, OFFB_PID_ALT_DK, OFFB_PID_ALT_BIAS,
-    OFFB_PID_ALT_MAX_OUTPUT, OFFB_PID_ALT_MIN_OUTPUT,
-    OFFB_PID_ALT_MAX_OUTPUT_RAMP
-  );
+    rp_pid_alt_p, rp_pid_alt_i, rp_pid_alt_d, OFFB_PID_ALT_F,
+    OFFB_PID_ALT_DTC, OFFB_PID_ALT_DK, rp_pid_alt_out_bias,
+    rp_pid_alt_out_max, rp_pid_alt_out_min,
+    rp_pid_alt_out_ramp);
 
   pitchPID.conf(
-    OFFB_PID_PITCH_P, OFFB_PID_PITCH_I, OFFB_PID_PITCH_D, OFFB_PID_PITCH_F,
+    rp_pid_pitch_p, OFFB_PID_PITCH_I, rp_pid_pitch_d, OFFB_PID_PITCH_F,
     OFFB_PID_PITCH_DTC, OFFB_PID_PITCH_DK, OFFB_PID_PITCH_BIAS,
-    OFFB_PID_PITCH_MAX_OUTPUT, OFFB_PID_PITCH_MIN_OUTPUT,
-    OFFB_PID_PITCH_MAX_OUTPUT_RAMP
-  );
+    rp_pid_pitch_out_max, rp_pid_pitch_out_min,
+    rp_pid_pitch_out_ramp);
 
   rollPID.conf(
     OFFB_PID_ROLL_P, OFFB_PID_ROLL_I, OFFB_PID_ROLL_D, OFFB_PID_ROLL_F,
@@ -75,7 +94,9 @@ int OffbController::init() {
   }
   t.stop();
 
-  if (ros::ok() && currentState.connected) ROS_INFO("Connected to FCU");
+  #ifdef OFFB_VERBOSE
+    if (ros::ok() && currentState.connected) ROS_INFO("Connected to FCU");
+  #endif
 
   if (!setMode("STABILIZE")) return 0;     // Enter stabilize mode
   if (!armVehicle()) return 0;             // Arm vehice
@@ -142,11 +163,9 @@ void OffbController::readParam(const std::string& param_name, T* var, const T& d
  */
 ros::Timer OffbController::startTimeout(double duration) {
   timeout = false;
-  return nh.createTimer(
-            ros::Duration(duration),
-            &OffbController::timeoutCB,
-            this, true
-  );
+  return nh.createTimer(ros::Duration(duration),
+                        &OffbController::timeoutCB,
+                        this, true);
 }
 
 /**

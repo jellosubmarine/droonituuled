@@ -7,4 +7,7 @@ threshold:
 
 # Optical flow
 of:
-  refresh_interval: 15  # frames    
+  refresh_interval: 15  # frames
+
+frame:
+  mask_width: 0  # px

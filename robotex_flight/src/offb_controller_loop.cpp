@@ -36,15 +36,13 @@ void OffbController::loop() {
   double yaw = 0.0, pitch = 0.0, roll = 0.0;
 
   altPID.target = rp_pid_alt_target;
-  pitchPID.target = OFFB_PITCH_TARGET;
+  pitchPID.target = rp_pid_pitch_target;
   rollPID.target = OFFB_ROLL_TARGET;
   yawPID.target = OFFB_YAW_TARGET;
 
-  //geometry_msgs::Quaternion q;
-
   ros::Rate loopRate(OFFB_FLIGHT_LOOP_RATE);
   double t = ros::Time::now().toSec();
-  double lostTime = -1; // Time when nav got lost
+  double lostTime = -1;  // Time when nav got lost
 
   ros::spinOnce();
   altPID.initFirstInput(flightData.altitude - zeroAlt, t);
@@ -68,14 +66,14 @@ void OffbController::loop() {
 
 
     // Check abort altitude
-    if (relAlt > OFFB_ABORT_ALT) {
+    if (relAlt > rp_lim_abort_alt) {
       ROS_INFO("Exceeded ABORT ALT");
       SET_BIT(flightStatus, FLIGHT_STATUS_LAND);
     }
 
     // Check lost time
     if (GET_BIT(flightStatus, FLIGHT_STATUS_LOST) &&
-        (t - lostTime > OFFB_ABORT_LOST_TIME))
+        (t - lostTime > rp_lim_abort_lost_time))
     {
       ROS_INFO("Exceeded ABORT LOST TIME");
       SET_BIT(flightStatus, FLIGHT_STATUS_LAND);
@@ -124,7 +122,7 @@ void OffbController::loop() {
       // IF LOST
       if (GET_BIT(flightStatus, FLIGHT_STATUS_LOST)) {
         // Look for any lines unless we're taking off
-        if (fabs(flightData.climb) < OFFB_NAV_MAX_CLIMB)
+        if (fabs(flightData.climb) < rp_lim_nav_vs)
           rawAtt.body_rate.z = OFFB_LOST_YAW_RATE;
         else
           rawAtt.body_rate.z = 0.0;
@@ -165,9 +163,9 @@ void OffbController::loop() {
                           pitchPID.output, 0.0, &(rawAtt.orientation));
 
           // Check for altitude outside margins
-          if (relAlt < rp_pid_alt_target - OFFB_NAV_ALT_MARGIN ||
-              relAlt > rp_pid_alt_target + OFFB_NAV_ALT_MARGIN ||
-              fabs(flightData.climb) > OFFB_NAV_MAX_CLIMB )
+          if (relAlt < rp_pid_alt_target - rp_lim_nav_alt ||
+              relAlt > rp_pid_alt_target + rp_lim_nav_alt ||
+              fabs(flightData.climb) > rp_lim_nav_vs )
           {
             ROS_INFO("Altitude unstable. Stopped navigation.");
             CLEAR_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
@@ -182,9 +180,9 @@ void OffbController::loop() {
           rawAtt.orientation.z = 0.0;
 
           // Check if ready to navigate
-          if (relAlt > rp_pid_alt_target - OFFB_NAV_ALT_MARGIN &&
-              relAlt < rp_pid_alt_target + OFFB_NAV_ALT_MARGIN &&
-              fabs(flightData.climb) < OFFB_NAV_MAX_CLIMB )
+          if (relAlt > rp_pid_alt_target - rp_lim_nav_alt &&
+              relAlt < rp_pid_alt_target + rp_lim_nav_alt &&
+              fabs(flightData.climb) < rp_lim_nav_vs )
           {
             ROS_INFO("Starting navigation");
             SET_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
@@ -204,7 +202,7 @@ void OffbController::loop() {
     #ifdef OFFB_SHOW_VISUALS
       updateVisuals(floorPoint.x, floorPoint.y, camData.yaw);
     #endif
-    
+
     ros::spinOnce();
     loopRate.sleep();
   }

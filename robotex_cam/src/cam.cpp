@@ -34,7 +34,8 @@ Visuals::Visuals(ros::NodeHandle &nh) : it(nh) {
   // Read parameters (third argument is default value, if unable to fetch parameter)
   readParam(nh, "threshold/saturation", &rp_sat_thr, 50);
   readParam(nh, "of/refresh_interval", &rp_of_refresh_int, 15);
-  
+  readParam(nh, "frame/mask_width", &rp_frame_mask_width, 0);
+
   image_sub = it.subscribe("/camera/color/image_raw", 1, &Visuals::imgcb, this);
   point_pub = nh.advertise<mavros_msgs::PositionTarget>(DT_CAM_TOPIC, 1);
 }
@@ -83,8 +84,8 @@ void Visuals::run() {
 
   // Create image mask
   edge_mask = cv::Mat::zeros(frame.size(), CV_8UC1);
-  edge_mask(Rect(CAM_FRAME_MASK_WIDTH, 0,
-                 edge_mask.cols - 2 * CAM_FRAME_MASK_WIDTH,
+  edge_mask(Rect(rp_frame_mask_width, 0,
+                 edge_mask.cols - 2 * rp_frame_mask_width,
                  edge_mask.rows)) = Scalar(255);
 
   mask3 = cv::Mat(frame.size(), CV_8UC3);

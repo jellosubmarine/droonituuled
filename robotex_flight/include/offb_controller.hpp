@@ -73,7 +73,16 @@ private:
   bool timeout;
 
   // Ros parameters
+  float rp_lim_nav_alt, rp_lim_nav_vs;
+  float rp_lim_abort_alt, rp_lim_abort_lost_time;
   float rp_pid_alt_target;
+  float rp_pid_alt_out_min, rp_pid_alt_out_max;
+  float rp_pid_alt_out_ramp, rp_pid_alt_out_bias;
+  float rp_pid_alt_p, rp_pid_alt_i, rp_pid_alt_d;
+  float rp_pid_pitch_target;
+  float rp_pid_pitch_out_min, rp_pid_pitch_out_max, rp_pid_pitch_out_ramp;
+  float rp_pid_pitch_p, rp_pid_pitch_d;
+
 
   // Visuals
   #ifdef OFFB_SHOW_VISUALS
