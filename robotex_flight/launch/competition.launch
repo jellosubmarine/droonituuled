@@ -1,0 +1,13 @@
+<launch>
+    <rosparam file="$(find robotex_cam)/config/config.yaml" command="load" />
+    <rosparam file="$(find robotex_flight)/config/config.yaml" command="load" />
+    <!-- APM mavros launch -->
+    <include file="$(find robotex_flight)launch/apm.launch">
+        <arg name="fcu_url" value="/dev/ttyACM0:57600" />
+    </include>
+    <!-- Camera node -->
+    <node name="robotex_cam_main" pkg="robotex_cam" type="robotex_cam_main"  output="screen">
+    </node>
+    <!-- Flight node -->
+    <node name="robotex_flight_main" pkg="robotex_flight" type="robotex_flight_main"  output="screen"></node>
+</launch>
