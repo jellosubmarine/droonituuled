@@ -46,7 +46,9 @@
 class Visuals {
 public:
   Visuals(ros::NodeHandle &nh);
-  ~Visuals();
+  #ifdef DT_BUILD_DEV
+    ~Visuals();
+  #endif
 
   void imgcb(const sensor_msgs::ImageConstPtr &msg);
   void run();
