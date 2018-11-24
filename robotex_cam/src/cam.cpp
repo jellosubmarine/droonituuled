@@ -91,7 +91,9 @@ void Visuals::run() {
     cv::Size2f(CAM_FRAME_WIDTH, CAM_FRAME_HEIGHT), 0.0f),
     cv::Scalar(255), -1, 8);
 
-  mask3 = cv::Mat(frame.size(), CV_8UC3);
+  #ifdef DT_BUILD_DEV
+    mask3 = cv::Mat(frame.size(), CV_8UC3);
+  #endif
 
   // Main processing loop
   while (ros::ok()) {
