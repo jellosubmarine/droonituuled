@@ -1,6 +1,6 @@
 <launch>
     <rosparam file="$(find robotex_cam)/config/config.yaml" command="load" />
-    <!-- <rosparam file="$(find robotex_flight)/config/config.yaml" command="load" /> -->
+    <rosparam file="$(find robotex_flight)/config/config.yaml" command="load" />
     <!-- APM mavros launch -->
     <include file="$(find robotex_flight)launch/apm.launch">
         <arg name="fcu_url" value="udp://127.0.0.1:14551@14555" />

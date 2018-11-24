@@ -1,6 +1,7 @@
 #include <csignal>
 
 #include "ros/ros.h"
+#include "ros/time.h"
 #include "mavros_msgs/ParamSet.h"
 #include "mavros_msgs/AttitudeTarget.h"
 #include "mavros_msgs/SetMode.h"
@@ -72,6 +73,8 @@ int main(int argc, char **argv) {
 	// Set up controller
 	OffbController ctrl;
 	ctrl.nh = nh;
+
+	ros::Duration(6, 0).sleep();
 
 	ROS_INFO("Initialising controller");
 	if (ctrl.init()) {

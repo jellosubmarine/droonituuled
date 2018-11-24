@@ -33,6 +33,9 @@ Start scripts are provided in the `start` directory. To start the whole simulati
 ```
 . start_sim_vehicle
 . start_gazebo
+AND
+. start_apm_ros
+OR
 . start_mavros_apm
 . start_robotex_cam
 . start_robotex_flight
