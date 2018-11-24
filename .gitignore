@@ -42,6 +42,9 @@ srv/_*.py
 qtcreator-*
 *.user
 *.bin
+*.parm
+*.tlog
+*.tlog.raw
 
 /planning/cfg
 /planning/docs
