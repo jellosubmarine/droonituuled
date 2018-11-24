@@ -1,10 +1,9 @@
-#include <csignal>
+// #include <csignal>
 
 #include "ros/ros.h"
 #include "ros/time.h"
-#include "mavros_msgs/ParamSet.h"
-#include "mavros_msgs/AttitudeTarget.h"
-#include "mavros_msgs/SetMode.h"
+// #include "mavros_msgs/ParamSet.h"
+// #include "mavros_msgs/SetMode.h"
 
 #include "offb_controller.hpp"
 #include "offb_config.hpp"
@@ -39,51 +38,31 @@ void sigintHandler(int sig) {
 /* ============ MAIN ============ */
 
 int main(int argc, char **argv) {
-	//ros::init(argc, argv, "Droonituuled", ros::init_options::NoSigintHandler);
-	ros::init(argc, argv, "robotex_flight");
-	ROS_INFO("Inited robotex_flight");
+  // ros::init(argc, argv, "Droonituuled", ros::init_options::NoSigintHandler);
+  ros::init(argc, argv, "robotex_flight");
+  // ROS_INFO("Inited robotex_flight");
 
-	ros::NodeHandle nh;
-	//ros::ServiceClient param_cl = nh.serviceClient<mavros_msgs::ParamSet> ("/mavros/param/set");
-	//mavros_msgs::ParamSet paramMsg;
+  ros::NodeHandle nh;
+  // ros::ServiceClient param_cl = nh.serviceClient<mavros_msgs::ParamSet> ("/mavros/param/set");
+  // mavros_msgs::ParamSet paramMsg;
 
-	//signal(SIGINT, sigintHandler);
+  // signal(SIGINT, sigintHandler);
 
-	//ROS_INFO("Disabling GPS");
-	/*
-	paramMsg.request.param_id = "AHRS_GPS_USE";
-	paramMsg.request.value.integer = AHRS_GPS_USE_DISABLED;
-	param_cl.call(paramMsg);
-	*/
+  // Set up controller
+  OffbController ctrl;
+  ctrl.nh = nh;
 
-	//paramMsg.request.param_id = "EK2_GPS_TYPE";
-	//paramMsg.request.value.integer = EK2_GPS_TYPE_INHIBIT;
-	//param_cl.call(paramMsg);
+  #ifdef DT_BUILD_LIVE
+    ros::Duration(6, 0).sleep();
+  #endif
 
-	/*
-	paramMsg.request.param_id = "GPS_TYPE";
-	paramMsg.request.value.integer = GPS_TYPE_NONE;
-	param_cl.call(paramMsg);
+  // ROS_INFO("Initialising controller");
+  if (ctrl.init()) {
+    // ROS_INFO("Starting controller loop");
+    ctrl.loop();
+  } else {
+    ROS_INFO("Failed to initialise flight controller");
+  }
 
-	paramMsg.request.param_id = "GPS_TYPE2";
-	paramMsg.request.value.integer = GPS_TYPE_NONE;
-	param_cl.call(paramMsg);
-	*/
-
-	// Set up controller
-	OffbController ctrl;
-	ctrl.nh = nh;
-
-	ros::Duration(6, 0).sleep();
-
-	ROS_INFO("Initialising controller");
-	if (ctrl.init()) {
-		ROS_INFO("Starting controller loop");
-		ctrl.loop();
-	}
-	else {
-		ROS_INFO("Failed to initialise flight controller");
-	}
-
-	ROS_INFO("robotex_flight finished");
+  ROS_INFO("robotex_flight finished");
 }

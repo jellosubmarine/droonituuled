@@ -10,7 +10,11 @@
 #include "dt_config.hpp"
 
 #ifdef DT_BUILD_DEV
-  // #define CAM_SHOW_FPS
+  // #define CAM_VERBOSE
+
+  #ifdef CAM_VERBOSE
+    // #define CAM_SHOW_FPS
+  #endif
 #endif
 
 #define CAM_LOOP_RATE           15  // Hz
@@ -27,7 +31,7 @@
 #define CAM_BLUR_SIZE            3
 #define CAM_CONTOUR_LIM_LOW   1000
 #define CAM_CONTOUR_LIM_HIGH 10000
-#define CAM_CONTOUR_MIN_DIST2   10.0
+#define CAM_CONTOUR_MIN_DIST2   25.0
 #define CAM_CONTOUR_OUTLIER      2.0  // Distance factor
 
 
@@ -58,6 +62,8 @@ protected:
 
 private:
   void process();
+  void removeOutliers();
+  void weighCentroids();
   float hdgFromPca();
   float hdgFromBottomPoint();
   float hdgFromLineFit();
@@ -91,13 +97,14 @@ private:
   std::vector<std::vector<cv::Point> > contours;
   std::vector<cv::Moments> mu;
   std::vector<cv::Vec4i> hierarchy;
-  std::vector<cv::Point2f> centroids, weightedCentroids;
+  std::vector<cv::Point2f> centroids, weighted_centroids;
   std::vector<float> line_data;
   cv::Mat distances;
   cv::Point2f bottom_centroid, mean_centroid;
   std::vector<float> c_x, c_y;
-  float Z, Z1, Z2;
-  int W;
+  float Z, Z1, Z2, min_dist_abs, min_dist_cur;
+  int i, j, s;
+
 
   #ifdef DT_BUILD_DEV
     cv::Mat mask3;

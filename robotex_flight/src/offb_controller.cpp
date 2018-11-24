@@ -31,6 +31,18 @@ int OffbController::init() {
   readParam("pid/pitch/output/ramp", &rp_pid_pitch_out_ramp, 1.0f);
   readParam("pid/pitch/p", &rp_pid_pitch_p, 0.0f);
   readParam("pid/pitch/d", &rp_pid_pitch_d, 0.0f);
+  readParam("pid/roll/target", &rp_pid_roll_target, 1.0f);
+  readParam("pid/roll/output/min", &rp_pid_roll_out_min, -1.0f);
+  readParam("pid/roll/output/max", &rp_pid_roll_out_max, +1.0f);
+  readParam("pid/roll/output/ramp", &rp_pid_roll_out_ramp, 1.0f);
+  readParam("pid/roll/p", &rp_pid_roll_p, 0.0f);
+  readParam("pid/roll/d", &rp_pid_roll_d, 0.0f);
+  readParam("pid/yaw/target", &rp_pid_yaw_target, 1.0f);
+  readParam("pid/yaw/output/min", &rp_pid_yaw_out_min, -1.0f);
+  readParam("pid/yaw/output/max", &rp_pid_yaw_out_max, +1.0f);
+  readParam("pid/yaw/output/ramp", &rp_pid_yaw_out_ramp, 1.0f);
+  readParam("pid/yaw/p", &rp_pid_yaw_p, 0.0f);
+  readParam("pid/yaw/d", &rp_pid_yaw_d, 0.0f);
 
   // Set up comms
   #ifdef OFFB_VERBOSE
@@ -64,18 +76,16 @@ int OffbController::init() {
     rp_pid_pitch_out_ramp);
 
   rollPID.conf(
-    OFFB_PID_ROLL_P, OFFB_PID_ROLL_I, OFFB_PID_ROLL_D, OFFB_PID_ROLL_F,
+    rp_pid_roll_p, OFFB_PID_ROLL_I, rp_pid_roll_d, OFFB_PID_ROLL_F,
     OFFB_PID_ROLL_DTC, OFFB_PID_ROLL_DK, OFFB_PID_ROLL_BIAS,
-    OFFB_PID_ROLL_MAX_OUTPUT, OFFB_PID_ROLL_MIN_OUTPUT,
-    OFFB_PID_ROLL_MAX_OUTPUT_RAMP
-  );
+    rp_pid_roll_out_max, rp_pid_roll_out_min,
+    rp_pid_roll_out_ramp);
 
   yawPID.conf(
-    OFFB_PID_YAW_P, OFFB_PID_YAW_I, OFFB_PID_YAW_D, OFFB_PID_YAW_F,
+    rp_pid_yaw_p, OFFB_PID_YAW_I, rp_pid_yaw_d, OFFB_PID_YAW_F,
     OFFB_PID_YAW_DTC, OFFB_PID_YAW_DK, OFFB_PID_YAW_BIAS,
-    OFFB_PID_YAW_MAX_OUTPUT, OFFB_PID_YAW_MIN_OUTPUT,
-    OFFB_PID_YAW_MAX_OUTPUT_RAMP
-  );
+    rp_pid_yaw_out_max, rp_pid_yaw_out_min,
+    rp_pid_yaw_out_ramp);
 
 
   // Init visuals

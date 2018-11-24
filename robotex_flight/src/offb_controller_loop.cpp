@@ -37,8 +37,8 @@ void OffbController::loop() {
 
   altPID.target = rp_pid_alt_target;
   pitchPID.target = rp_pid_pitch_target;
-  rollPID.target = OFFB_ROLL_TARGET;
-  yawPID.target = OFFB_YAW_TARGET;
+  rollPID.target = rp_pid_roll_target;
+  yawPID.target = rp_pid_yaw_target;
 
   ros::Rate loopRate(OFFB_FLIGHT_LOOP_RATE);
   double t = ros::Time::now().toSec();
@@ -46,7 +46,6 @@ void OffbController::loop() {
 
   ros::spinOnce();
   altPID.initFirstInput(flightData.altitude - zeroAlt, t);
-  //yawPID.initFirstInput(camData.yaw, t); // TODO: move to "NOT LOST" setting
 
   int flightStatus =
     (flightData.altitude - zeroAlt >= OFFB_MIN_FLIGHT_ALT) *
@@ -136,7 +135,7 @@ void OffbController::loop() {
         if (camData.position.z) {
           ROS_INFO("Cleared LOST status");
           CLEAR_BIT(flightStatus, FLIGHT_STATUS_LOST);
-          yawPID.initFirstInput(camData.yaw + OFFB_YAW_TARGET_OFFSET, t);
+          yawPID.initFirstInput(camData.yaw, t);
         }
       }
 
@@ -144,7 +143,7 @@ void OffbController::loop() {
       // NOT LOST
       else {
         // Turn to correct heading
-        yawPID.update(camData.yaw + OFFB_YAW_TARGET_OFFSET, t);
+        yawPID.update(camData.yaw, t);
         rawAtt.body_rate.z = yawPID.output;
 
         // Convert camera data

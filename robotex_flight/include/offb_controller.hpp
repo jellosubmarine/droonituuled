@@ -82,7 +82,12 @@ private:
   float rp_pid_pitch_target;
   float rp_pid_pitch_out_min, rp_pid_pitch_out_max, rp_pid_pitch_out_ramp;
   float rp_pid_pitch_p, rp_pid_pitch_d;
-
+  float rp_pid_roll_target;
+  float rp_pid_roll_out_min, rp_pid_roll_out_max, rp_pid_roll_out_ramp;
+  float rp_pid_roll_p, rp_pid_roll_d;
+  float rp_pid_yaw_target;
+  float rp_pid_yaw_out_min, rp_pid_yaw_out_max, rp_pid_yaw_out_ramp;
+  float rp_pid_yaw_p, rp_pid_yaw_d;
 
   // Visuals
   #ifdef OFFB_SHOW_VISUALS
