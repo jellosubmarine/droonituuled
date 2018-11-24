@@ -43,6 +43,7 @@ int OffbController::init() {
   readParam("pid/yaw/output/ramp", &rp_pid_yaw_out_ramp, 1.0f);
   readParam("pid/yaw/p", &rp_pid_yaw_p, 0.0f);
   readParam("pid/yaw/d", &rp_pid_yaw_d, 0.0f);
+  readParam("pid/roll_yaw_coupling", &rp_roll_yaw_coupling, 0.0f);
 
   // Set up comms
   #ifdef OFFB_VERBOSE

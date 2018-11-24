@@ -158,7 +158,7 @@ void OffbController::loop() {
         if (GET_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE)) {
           pitchPID.update(floorPoint.y, camData.velocity.y, t);
           rollPID.update(floorPoint.x, camData.velocity.x, t);
-          offb_euler2quat(rollPID.output + rawAtt.body_rate.z * OFFB_ROLL_YAW_COUPL,
+          offb_euler2quat(rollPID.output + rawAtt.body_rate.z * rp_roll_yaw_coupling,
                           pitchPID.output, 0.0, &(rawAtt.orientation));
 
           // Check for altitude outside margins

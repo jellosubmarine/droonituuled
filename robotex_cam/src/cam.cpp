@@ -32,9 +32,11 @@ Visuals::Visuals(ros::NodeHandle &nh) : it(nh) {
   image_flag = false;
 
   // Read parameters (third argument is default value, if unable to fetch parameter)
-  readParam(nh, "threshold/saturation", &rp_sat_thr, 50);
   readParam(nh, "of/refresh_interval", &rp_of_refresh_int, 15);
-  readParam(nh, "frame/mask_width", &rp_frame_mask_width, 0);
+  readParam(nh, "frame/mask/saturation_thr", &rp_mask_sat_thr, 50);
+  readParam(nh, "frame/mask/max_width", &rp_dynmask_max_width, 0);
+  readParam(nh, "frame/mask/min_contours", &rp_dynmask_req_contours, 3);
+  readParam(nh, "contour/outlier_coef", &rp_contour_outlier, 3.0f);
 
   image_sub = it.subscribe("/camera/color/image_raw", 1, &Visuals::imgcb, this);
   point_pub = nh.advertise<mavros_msgs::PositionTarget>(DT_CAM_TOPIC, 1);
@@ -84,9 +86,10 @@ void Visuals::run() {
 
   // Create image mask
   edge_mask = cv::Mat::zeros(frame.size(), CV_8UC1);
-  edge_mask(Rect(rp_frame_mask_width, 0,
-                 edge_mask.cols - 2 * rp_frame_mask_width,
-                 edge_mask.rows)) = Scalar(255);
+  cv::ellipse(edge_mask, cv::RotatedRect(
+    cv::Point2f((CAM_FRAME_WIDTH-1)/2.0f, (CAM_FRAME_HEIGHT-1)/2.0f),
+    cv::Size2f(CAM_FRAME_WIDTH, CAM_FRAME_HEIGHT), 0.0f),
+    cv::Scalar(255), -1, 8);
 
   mask3 = cv::Mat(frame.size(), CV_8UC3);
 

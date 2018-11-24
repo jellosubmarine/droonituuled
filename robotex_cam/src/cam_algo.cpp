@@ -4,7 +4,7 @@
 #include "dt_config.hpp"
 #include "cam.hpp"
 #include "cam_algo.hpp"
-
+#include "ros/ros.h"
 
 
 // Signum
@@ -50,13 +50,83 @@ float cov(const std::vector<float> &A, const std::vector<float> &B) {
 
 /* Functions belonging to Visuals */
 
+// Applies weighing to centroid X coordinates.
 void Visuals::weighCentroids() {
+  // Uncomment to disable
+  // weighted_centroids = centroids;
+  // return;
+
   for (i = 0; i < centroids.size(); ++i) {
+    // Div by const
+    // 0.5 * (centroids[i].x - CAM_FRAME_OFFSET_X) + CAM_FRAME_OFFSET_X,
+
+    // Sqrt
     weighted_centroids.push_back(cv::Point2f(
-      // 0.5 * (centroids[i].x - CAM_FRAME_OFFSET_X) + CAM_FRAME_OFFSET_X,
       revertXCoord(
         sqrt(fabs(convertXCoord(centroids[i].x))) *
         sgn(convertXCoord(centroids[i].x)) * 10.0),
       centroids[i].y));
   }
+}
+
+// Creates a frame mask based on the number of contours
+void Visuals::dynamicMask() {
+  edge_mask = cv::Mat::zeros(frame.size(), CV_8UC1) + cv::Scalar(255);
+
+  // Use full frame, if too few contours are found
+  if (centroids.size() <= rp_dynmask_req_contours) return;
+
+  // Todo: implement gradual narrowing
+  dynmask_width = rp_dynmask_max_width;
+
+  edge_mask(cv::Rect(0, 0,
+    dynmask_width, CAM_FRAME_HEIGHT)) = cv::Scalar(0);
+  edge_mask(cv::Rect(CAM_FRAME_WIDTH - dynmask_width, 0,
+    dynmask_width, CAM_FRAME_HEIGHT)) = cv::Scalar(0);
+}
+
+
+
+/* Target heading calculation */
+
+float Visuals::hdgFromPca() {
+    // PCA implementation
+    c_x.clear();
+    c_y.clear();
+    for (int i = 0; i < centroids.size(); ++i) {  // To calculate cov, we need vectors with components
+      c_x.push_back(centroids[i].x);
+      c_y.push_back(CAM_FRAME_HEIGHT - centroids[i].y);
+    }
+
+    float XX = cov(c_x, c_x);  // Cov matrix elements
+    float XY = cov(c_x, c_y);
+    float YX = cov(c_y, c_x);
+    float YY = cov(c_y, c_y);
+
+    // We get 2 eigenvalues, we need the bigger one.
+    float e_val1 = 0.5 * (XX + YY + sqrt(pow((XX + YY), 2) - 4 * (XX * YY - XY * YX)));  // first root
+    float e_val2 = 0.5 * (XX + YY - sqrt(pow((XX + YY), 2) - 4 * (XX * YY - XY * YX)));  // second root
+    float e_val = std::max(e_val1, e_val2);
+
+    // Get the direction.
+    // float hdg = atan2(1, XY / (e_val - XX)) - CV_PI / 2; // pi/2 subtracted to get values from -pi/2 to pi/2
+    float hdg = atan2(XY/(e_val - XX), 1.0);
+    // Note, that when drawing the direction vector, another pi/2 is subtracted to make the "0"
+    // point upwards.
+    return hdg;
+}
+
+// Heading calculation based on line fitting
+float Visuals::hdgFromLineFit() {
+  cv::fitLine(centroids, line_data, CV_DIST_L2, 0.0, 0.01, 0.01);
+  float hdg = atan2(line_data[0], -line_data[1]);
+  if (hdg > 2.09) hdg -= CV_PI;         // +120 deg
+  else if (hdg < -2.09) hdg += CV_PI;   // -120 deg
+  return hdg;
+}
+
+// Heading calculation based on bottom and middle points
+float Visuals::hdgFromBottomPoint() {
+  return atan2(mean_centroid.x - bottom_centroid.x,
+               mean_centroid.y - bottom_centroid.y);
 }

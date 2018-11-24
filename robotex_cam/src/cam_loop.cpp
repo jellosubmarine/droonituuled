@@ -62,7 +62,7 @@ void Visuals::removeOutliers() {
     }
 
     // Mark outliers for removal
-    if (min_dist_cur > CAM_CONTOUR_OUTLIER * min_dist_abs) {
+    if (min_dist_cur > rp_contour_outlier * min_dist_abs) {
       centroids[i].x = FLT_MAX;
     }
   }
@@ -83,50 +83,6 @@ void Visuals::removeOutliers() {
 }
 
 
-float Visuals::hdgFromPca() {
-    // PCA implementation
-    c_x.clear();
-    c_y.clear();
-    for (int i = 0; i < centroids.size(); ++i) {  // To calculate cov, we need vectors with components
-      c_x.push_back(centroids[i].x);
-      c_y.push_back(CAM_FRAME_HEIGHT - centroids[i].y);
-    }
-
-    float XX = cov(c_x, c_x);  // Cov matrix elements
-    float XY = cov(c_x, c_y);
-    float YX = cov(c_y, c_x);
-    float YY = cov(c_y, c_y);
-
-    // We get 2 eigenvalues, we need the bigger one.
-    float e_val1 = 0.5 * (XX + YY + sqrt(pow((XX + YY), 2) - 4 * (XX * YY - XY * YX)));  // first root
-    float e_val2 = 0.5 * (XX + YY - sqrt(pow((XX + YY), 2) - 4 * (XX * YY - XY * YX)));  // second root
-    float e_val = max(e_val1, e_val2);
-
-    // Get the direction.
-    // float hdg = atan2(1, XY / (e_val - XX)) - CV_PI / 2; // pi/2 subtracted to get values from -pi/2 to pi/2
-    float hdg = atan2(XY/(e_val - XX), 1.0);
-    // Note, that when drawing the direction vector, another pi/2 is subtracted to make the "0"
-    // point upwards.
-    return hdg;
-}
-
-// Heading calculation based on line fitting
-float Visuals::hdgFromLineFit() {
-  cv::fitLine(centroids, line_data, CV_DIST_L2, 0.0, 0.01, 0.01);
-  float hdg = atan2(line_data[0], -line_data[1]);
-  if (hdg > 2.09) hdg -= CV_PI;         // +120 deg
-  else if (hdg < -2.09) hdg += CV_PI;   // -120 deg
-  return hdg;
-}
-
-// Heading calculation based on bottom and middle points
-float Visuals::hdgFromBottomPoint() {
-  return atan2(mean_centroid.x - bottom_centroid.x,
-               mean_centroid.y - bottom_centroid.y);
-}
-
-
-
 /* IMAGE PROCESSING */
 void Visuals::process() {
   #ifdef CAM_SHOW_FPS
@@ -138,7 +94,7 @@ void Visuals::process() {
   // Color conversion and masking
   cvtColor(frame, frame_gray, COLOR_BGR2GRAY);
   cvtColor(frame, frame_HSV, COLOR_BGR2HSV);
-  inRange(frame_HSV, Scalar(0, 0, 0), Scalar(255, rp_sat_thr, 255), hsv_mask);
+  inRange(frame_HSV, Scalar(0, 0, 0), Scalar(255, rp_mask_sat_thr, 255), hsv_mask);
   bitwise_and(hsv_mask, edge_mask, total_mask);
   bitwise_and(frame_gray, total_mask, frame_gray_masked);
 
@@ -228,6 +184,15 @@ void Visuals::process() {
     }
   }
 
+/*
+  // todo: maybe use stats for mask width calculation
+  c_x.clear();
+  c_y.clear();
+  for (i = 0; i < centroids.size(); ++i) {
+    c_x.push_back(centroids[i].x);
+    c_x.push_back(centroids[i].y);
+  }
+*/
   if (centroids.size()) {
     removeOutliers();
     weighCentroids();
@@ -336,7 +301,8 @@ void Visuals::process() {
   #endif
 #endif
 
-  // Copy data for next iteration
+  // Update for next frame
+  //dynamicMask();
   frame_gray_masked.copyTo(frame_gray_masked_old);
   frame_old_time = frame_time;
   of_old_points = of_new_points;

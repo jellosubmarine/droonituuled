@@ -19,21 +19,17 @@
 #define OFFB_DEBUG_START_DELAY  1.0  // sec
 
 #define OFFB_MIN_FLIGHT_ALT    0.1   // m, less is considered on ground
-// #define OFFB_NAV_ALT_MARGIN    0.3   // m, navigate when alt +- margin
-// #define OFFB_NAV_MAX_CLIMB     0.3   // m/s
-// #define OFFB_ABORT_ALT         2.0   // m, max allowed altitude
-// #define OFFB_ABORT_LOST_TIME  10.0   // s, max time to be lost
 
 #define OFFB_CAM_ANGLE      0.4368   // Camera pitch from ground normal
 #define OFFB_CAM_FOV_X     0.69813   // 1.39626
 #define OFFB_CAM_FOV_Y     0.52360   // 1.04720
 #define OFFB_CAM_SIZE_X      640.0
 #define OFFB_CAM_SIZE_Y      480.0
-#define OFFB_CAM_OFFSET_X    320.0
-#define OFFB_CAM_OFFSET_Y      0.0
+// #define OFFB_CAM_OFFSET_X    320.0
+// #define OFFB_CAM_OFFSET_Y      0.0
 
 #define DEG                    0.017453293  // deg2rad conversion
-#define OFFB_ROLL_YAW_COUPL    0.02
+// #define OFFB_ROLL_YAW_COUPL    0.02
 #define OFFB_LOST_YAW_RATE   (30*DEG)
 
 // Altitude PID tuning, input rel alt, output throttle

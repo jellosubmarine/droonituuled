@@ -1,13 +1,15 @@
 #Parameters for the camera node
 
-# Threshold parameters
-threshold:
-  saturation: 50
-
-
 # Optical flow
 of:
   refresh_interval: 15  # frames
 
+
 frame:
-  mask_width: 0  # px
+  mask:
+    saturation_thr: 50
+    max_width:     200  # px
+    min_contours:    3  # Min number of req contours to shrink the frame
+
+contour:
+  outlier_coef:    2.8  # Distance factor

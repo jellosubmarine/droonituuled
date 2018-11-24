@@ -35,12 +35,12 @@ pid:
 
   # Input metres right, output roll right in radians
   roll:
-    target: 0.0   # Metres ahead
+    target: 0.0   # Metres right
     output:
       min:  deg(-10) # Degrees backwards
       max:  deg(+10) # Degrees forward
       ramp: deg(20)  # Degrees / sec
-    p:     -0.02     # neg accel right / 9.81
+    p:     -0.05     # neg accel right / 9.81
     d:      0.10     # accel right / 9.81
 
   # Input radians right, output yaw rate right rad/s
@@ -49,6 +49,8 @@ pid:
     output:
       min:  deg(-30) # Degrees backwards
       max:  deg(+30) # Degrees forward
-      ramp: deg(20)  # Degrees / sec
-    p:     -0.5      # neg accel right / 9.81
-    d:     -1.0      # accel right / 9.81
+      ramp: deg(30)  # Degrees / sec
+    p:     -0.7      # neg accel right / 9.81
+    d:     -1.2      # accel right / 9.81
+
+  roll_yaw_coupling: 0.04
