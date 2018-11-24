@@ -4,7 +4,6 @@
 #include "dt_config.hpp"
 #include "cam.hpp"
 #include "cam_algo.hpp"
-#include "ros/ros.h"
 
 
 // Signum
@@ -32,6 +31,24 @@ float revertYCoord(float y) {
 // Squared distance between two points
 double dist2(const cv::Point2f &p1, const cv::Point2f &p2) {
   return (p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y);
+}
+
+
+// Calculates the mean point of a given set
+void mean_point(const std::vector<cv::Point2f> &points, cv::Point2f *output) {
+  output->x = 0.0;
+  output->y = 0.0;
+
+  if (points.size() <= 0) return;
+
+  for (int i = 0; i < points.size(); ++i) {
+    output->x += points[i].x;
+    output->y += points[i].y;
+  }
+  output->x /= float(points.size());
+  output->y /= float(points.size());
+  output->x = convertXCoord(output->x);
+  output->y = convertYCoord(output->y);
 }
 
 
@@ -129,4 +146,13 @@ float Visuals::hdgFromLineFit() {
 float Visuals::hdgFromBottomPoint() {
   return atan2(mean_centroid.x - bottom_centroid.x,
                mean_centroid.y - bottom_centroid.y);
+}
+
+
+// Estimates contour orientation
+float contour_angle(const cv::Moments& m) {
+  float mu20p = m.mu20 / m.m00;
+  float mu02p = m.mu02 / m.m00;
+  float mu11p = m.mu11 / m.m00;
+  return 0.5f * atan(2.0f * mu11p / (mu20p - mu02p));
 }

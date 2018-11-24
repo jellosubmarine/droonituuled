@@ -23,7 +23,6 @@
 #define CAM_FRAME_HEIGHT       480
 #define CAM_FRAME_OFFSET_X     320
 #define CAM_FRAME_OFFSET_Y     240
-// #define CAM_FRAME_MASK_WIDTH   0
 
 #define CAM_CANNY_THR_LOW      121
 #define CAM_CANNY_THR_HIGH     (CAM_CANNY_THR_LOW * 1.5)
@@ -32,8 +31,6 @@
 #define CAM_CONTOUR_LIM_LOW   1000
 #define CAM_CONTOUR_LIM_HIGH 10000
 #define CAM_CONTOUR_MIN_DIST2   25.0
-#define CAM_CONTOUR_OUTLIER      2.0  // Distance factor
-
 
 #define CAM_OF_MAX_LEVELS        2  // OF pyramid levels
 #define CAM_FAST_THRESHOLD      20
@@ -64,22 +61,25 @@ private:
   void process();
   void removeOutliers();
   void weighCentroids();
+  void dynamicMask();
   float hdgFromPca();
   float hdgFromBottomPoint();
   float hdgFromLineFit();
 
   // Ros parameters
   template<typename T> void readParam(const ros::NodeHandle& nh, const std::string& param_name, T* var, const T& defaultVal);
-  int rp_sat_thr;
+  int rp_mask_sat_thr;
   int rp_of_refresh_int;
-  int rp_frame_mask_width;
+  int rp_dynmask_max_width, rp_dynmask_req_contours;
+  float rp_contour_outlier;
 
   // Frame storage
   bool image_flag;
   cv::Mat frame, frame_HSV, frame_gray, frame_gray_masked, frame_gray_masked_old;
   cv::Mat hsv_mask, edge_mask, total_mask, outframe;
   ros::Time frame_time, frame_old_time;
-
+  int dynmask_width;
+  
   // Optical flow
   std::vector<cv::Point2f> of_old_points, of_new_points;
   std::vector<uchar> of_status;

@@ -9,23 +9,6 @@ using namespace cv;
 
 
 
-// Calculates the mean point of a given set
-void mean_point(const std::vector<cv::Point2f> &points, cv::Point2f *output) {
-  output->x = 0.0;
-  output->y = 0.0;
-
-  if (points.size() <= 0) return;
-
-  for (int i = 0; i < points.size(); ++i) {
-    output->x += points[i].x;
-    output->y += points[i].y;
-  }
-  output->x /= float(points.size());
-  output->y /= float(points.size());
-  output->x = convertXCoord(output->x);
-  output->y = convertYCoord(output->y);
-}
-
 // Find and remove outliers using brute force
 void Visuals::removeOutliers() {
   s = centroids.size();

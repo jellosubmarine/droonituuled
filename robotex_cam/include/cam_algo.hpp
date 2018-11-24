@@ -15,6 +15,8 @@ float convertYCoord(float y);
 float revertYCoord(float y);
 
 double dist2(const cv::Point2f &p1, const cv::Point2f &p2);
-float cov(const std::vector<float> &A, const std::vector<float> &B);
+void mean_point(const std::vector<cv::Point2f> &points, cv::Point2f *output);
 
+float contour_angle(const cv::Moments& m);
+float cov(const std::vector<float> &A, const std::vector<float> &B);
 #endif
