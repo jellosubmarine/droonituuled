@@ -20,11 +20,11 @@ export PATH=$PATH:$HOME/gcc-arm-none-eabi-7-2017-q4-major/bin
 export PATH=$PATH:/opt/gcc-arm-none-eabi-4_9-2015q3/bin
 
 export GAZEBO_MODEL_PATH=$HOME/ardupilot_gazebo/gazebo_models
-export GAZEBO_MODEL_PATH=$HOME/catkin_ws/src/droonituuled/sim:$GAZEBO_MODEL_PATH
+export GAZEBO_MODEL_PATH=$HOME/catkin_ws/src/droonituuled/robotex_sim:$GAZEBO_MODEL_PATH
 
 export GAZEBO_RESOURCE_PATH=$HOME/ardupilot_gazebo/gazebo_worlds:$GAZEBO_RESOURCE_PATH
 export GAZEBO_RESOURCE_PATH=/usr/share/gazebo-7:$GAZEBO_RESOURCE_PATH
-export GAZEBO_RESOURCE_PATH=$HOME/catkin_ws/src/droonituuled/sim/worlds:$GAZEBO_RESOURCE_PATH
+export GAZEBO_RESOURCE_PATH=$HOME/catkin_ws/src/droonituuled/robotex_sim/worlds:$GAZEBO_RESOURCE_PATH
 ```
 
 ## Running Simulation
