@@ -1,0 +1,2 @@
+rosservice call /mavros/param/set "{param_id: GND_ALT_OFFSET, value:{integer: 0, real: 1.0}}"
+
