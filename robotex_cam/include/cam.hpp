@@ -28,8 +28,8 @@
 #define CAM_CANNY_THR_HIGH     (CAM_CANNY_THR_LOW * 1.5)
 #define CAM_CANNY_KERNEL_SIZE    3
 #define CAM_BLUR_SIZE            3
-#define CAM_CONTOUR_LIM_LOW   1000
-#define CAM_CONTOUR_LIM_HIGH 10000
+// #define CAM_CONTOUR_LIM_LOW   1000
+// #define CAM_CONTOUR_LIM_HIGH 10000
 #define CAM_CONTOUR_MIN_DIST2   25.0
 
 #define CAM_OF_MAX_LEVELS        2  // OF pyramid levels
@@ -73,7 +73,8 @@ private:
   int rp_mask_sat_thr;
   int rp_of_refresh_int;
   int rp_dynmask_max_width, rp_dynmask_req_contours;
-  float rp_contour_outlier;
+  int rp_contour_min_size, rp_contour_max_size;
+  float rp_contour_outlier, rp_contour_max_angle;
 
   // Frame storage
   bool image_flag;
@@ -81,7 +82,7 @@ private:
   cv::Mat hsv_mask, edge_mask, total_mask, outframe;
   ros::Time frame_time, frame_old_time;
   int dynmask_width;
-  
+
   // Optical flow
   std::vector<cv::Point2f> of_old_points, of_new_points;
   std::vector<uchar> of_status;
@@ -98,13 +99,14 @@ private:
   cv::Mat blurr, erod, dil, canny_output;
   std::vector<std::vector<cv::Point> > contours;
   std::vector<cv::Moments> mu;
+  cv::Moments moments;
   std::vector<cv::Vec4i> hierarchy;
   std::vector<cv::Point2f> centroids, weighted_centroids;
-  std::vector<float> line_data;
+  std::vector<float> line_data, contour_angles;
   cv::Mat distances;
   cv::Point2f bottom_centroid, mean_centroid;
   std::vector<float> c_x, c_y;
-  float Z, Z1, Z2, min_dist_abs, min_dist_cur;
+  float Z, Z1, Z2, min_dist_abs, min_dist_cur, contour_area;
   int i, j, s;
 
 

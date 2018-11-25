@@ -4,8 +4,8 @@
 #include "cam.hpp"
 #include "cam_algo.hpp"
 
-using namespace std;
-using namespace cv;
+// using namespace std;
+// using namespace cv;
 
 
 
@@ -77,9 +77,9 @@ void Visuals::process() {
 
 
   // Color conversion and masking
-  cvtColor(frame, frame_gray, COLOR_BGR2GRAY);
-  cvtColor(frame, frame_HSV, COLOR_BGR2HSV);
-  inRange(frame_HSV, Scalar(0, 0, 0), Scalar(255, rp_mask_sat_thr, 255), hsv_mask);
+  cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
+  cvtColor(frame, frame_HSV, cv::COLOR_BGR2HSV);
+  inRange(frame_HSV, cv::Scalar(0, 0, 0), cv::Scalar(255, rp_mask_sat_thr, 255), hsv_mask);
   bitwise_and(hsv_mask, edge_mask, total_mask);
   bitwise_and(frame_gray, total_mask, frame_gray_masked);
 
@@ -130,32 +130,45 @@ void Visuals::process() {
 
 
   // Process and find contours
-  blur(frame_gray_masked, blurr, Size(CAM_BLUR_SIZE, CAM_BLUR_SIZE), Point(-1, -1));  // Blur image
+  blur(frame_gray_masked, blurr, cv::Size(CAM_BLUR_SIZE, CAM_BLUR_SIZE), cv::Point(-1, -1));  // Blur image
   Canny(blurr, dil, CAM_CANNY_THR_LOW, CAM_CANNY_THR_HIGH, CAM_CANNY_KERNEL_SIZE);    // Find edges
-  dilate(dil, canny_output, Mat(), Point(-1, -1), 4, 1, 1);                           // Get rid of holes
+  dilate(dil, canny_output, cv::Mat(), cv::Point(-1, -1), 4, 1, 1);                           // Get rid of holes
   // erode(dil, dil, Mat(), Point(-1, -1), 4, 1, 1);
   findContours(canny_output, contours, hierarchy,
-    RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0));  // Get contours
+    cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));  // Get contours
 
 
   // Clear storage vectors
   mu.clear();
+  contour_angles.clear();
   centroids.clear();
   weighted_centroids.clear();
 
-  // Calculate contour moments
+  // Filter and process contours
   for (i = 0; i < contours.size(); ++i) {
-    if (contourArea(contours[i]) > CAM_CONTOUR_LIM_LOW &&
-        contourArea(contours[i]) < CAM_CONTOUR_LIM_HIGH) {
-      mu.push_back(moments(contours[i], false));
-    }
-  }
+    contour_area = cv::contourArea(contours[i]);
 
-  // Calculate centroids from moments
-  for (i = 0; i < mu.size(); i++) {
-    centroids.push_back(cv::Point2f(
-        float(mu[i].m10) / float(mu[i].m00),
-        float(mu[i].m01) / float(mu[i].m00)));
+    // Check for size limits
+    if (contour_area >= rp_contour_min_size &&
+        contour_area <= rp_contour_max_size) {
+      // mu.push_back(cv::moments(contours[i], false));
+      this->moments = cv::moments(contours[i], false);
+      contour_angles.push_back(contour_angle(this->moments));
+
+      // Check contour angle
+      if (fabs(contour_angles[i]) <= rp_contour_max_angle) {
+        centroids.push_back(cv::Point2f(
+          float(this->moments.m10) / float(this->moments.m00),
+          float(this->moments.m01) / float(this->moments.m00)));
+      } else {
+        contour_angles.erase(contour_angles.begin() + i);
+        contours.erase(contours.begin() + i);
+        --i;
+      }
+    } else {
+      contours.erase(contours.begin() + i);
+      --i;
+    }
   }
 
   // Remove close lying centroids
@@ -182,7 +195,9 @@ void Visuals::process() {
 */
   if (centroids.size()) {
     removeOutliers();
-    weighCentroids();
+    // weighCentroids();
+    weighted_centroids = centroids;
+
     mean_point(weighted_centroids, &mean_centroid);
     if (weighted_centroids.size() > 1) {
       bottom_centroid.x = convertXCoord(weighted_centroids[0].x);
@@ -231,29 +246,28 @@ void Visuals::process() {
 
   // Draw centroid markers
   for (i = 1; i < centroids.size(); i++) {
-    circle(frame, centroids[i], 4, Scalar(100, 80, 50), -1, 8, 0);
-    circle(frame, weighted_centroids[i], 4, Scalar(100, 80, 50), 2, 8, 0);
-    float angle = contour_angle(mu[i]);
-    Point2f linePoint(
-      centroids[i].x + 50.0 * sin(angle),
-      centroids[i].y - 50.0 * cos(angle));
+    circle(frame, centroids[i], 4, cv::Scalar(100, 80, 50), -1, 8, 0);
+    circle(frame, weighted_centroids[i], 4, cv::Scalar(100, 80, 50), 2, 8, 0);
+    cv::Point2f linePoint(
+      centroids[i].x + 50.0 * sin(contour_angles[i]),
+      centroids[i].y - 50.0 * cos(contour_angles[i]));
     cv::arrowedLine(frame, centroids[i], linePoint,
-      Scalar(150, 90, 30), 2, 8, 0, 0.1);
+      cv::Scalar(150, 90, 30), 2, 8, 0, 0.1);
   }
 
   // Draw average and bottom markers and heading line
   if (centroids.size()) {
-    Point2f midPoint(
+    cv::Point2f midPoint(
       revertXCoord(mean_centroid.x),
       revertYCoord(mean_centroid.y));
-    Point2f hdgPoint(
+    cv::Point2f hdgPoint(
       midPoint.x + CAM_VIS_LENGTH * sin(Z),
       midPoint.y - CAM_VIS_LENGTH * cos(Z));
 
-    circle(frame, midPoint, 10, Scalar(30, 200, 50), -1, 8, 0);
-    circle(frame, centroids[0], 7, Scalar(100, 150, 50), -1, 8, 0);
-    circle(frame, weighted_centroids[0], 7, Scalar(100, 150, 50), 2, 8, 0);
-    cv::arrowedLine(frame, midPoint, hdgPoint, Scalar(150, 50, 30), 2, 8, 0, 0.1);
+    circle(frame, midPoint, 10, cv::Scalar(30, 200, 50), -1, 8, 0);
+    circle(frame, centroids[0], 7, cv::Scalar(100, 150, 50), -1, 8, 0);
+    circle(frame, weighted_centroids[0], 7, cv::Scalar(100, 150, 50), 2, 8, 0);
+    cv::arrowedLine(frame, midPoint, hdgPoint, cv::Scalar(150, 50, 30), 2, 8, 0, 0.1);
   }
 
   // Draw mean velocity vector
@@ -264,28 +278,28 @@ void Visuals::process() {
                   cv::Point(
                       CAM_FRAME_OFFSET_X + of_mean_velocity.x * CAM_FRAME_WIDTH,
                       CAM_FRAME_HEIGHT - (CAM_FRAME_OFFSET_Y + of_mean_velocity.y * CAM_FRAME_HEIGHT)),
-                  Scalar(40, 40, 200), 2, 8, 0, 0.1);
+                  cv::Scalar(40, 40, 200), 2, 8, 0, 0.1);
 
   // Draw old OF features
   for (i = 0; i < of_old_points.size(); ++i) {
     cv::drawMarker(
-        frame, of_old_points[i], Scalar(200, 30, 30),
+        frame, of_old_points[i], cv::Scalar(200, 30, 30),
         cv::MARKER_TILTED_CROSS, 5, 1, 8);
   }
 
   // Draw new OF features
   for (i = 0; i < of_new_points.size(); ++i) {
     cv::drawMarker(
-        frame, of_new_points[i], Scalar(50, 200, 30),
+        frame, of_new_points[i], cv::Scalar(50, 200, 30),
         cv::MARKER_TILTED_CROSS, 5, 1, 8);
   }
 
-  mask3 = Scalar(1, 1, 0);
-  mask3.setTo(Scalar(1, 1, 1), total_mask);
+  mask3 = cv::Scalar(1, 1, 0);
+  mask3.setTo(cv::Scalar(1, 1, 1), total_mask);
   cv::multiply(frame, mask3, frame);
   imshow(CAM_VIS_NAME, frame);
 
-  waitKey(1);
+  cv::waitKey(1);
 
   #ifdef CAM_SHOW_FPS
     // Calculate and display fps

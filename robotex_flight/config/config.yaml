@@ -53,4 +53,4 @@ pid:
     p:     -0.7      # neg accel right / 9.81
     d:     -1.2      # accel right / 9.81
 
-  roll_yaw_coupling: 0.04
+  roll_yaw_coupling: 0.1

@@ -12,4 +12,8 @@ frame:
     min_contours:    3  # Min number of req contours to shrink the frame
 
 contour:
-  outlier_coef:    2.8  # Distance factor
+  outlier_coef:    3.0  # Distance factor
+  limit:
+    min_size:     1000
+    max_size:     5000
+    angle:    deg(55.0)

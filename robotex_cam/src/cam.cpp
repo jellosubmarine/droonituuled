@@ -37,6 +37,9 @@ Visuals::Visuals(ros::NodeHandle &nh) : it(nh) {
   readParam(nh, "frame/mask/max_width", &rp_dynmask_max_width, 0);
   readParam(nh, "frame/mask/min_contours", &rp_dynmask_req_contours, 3);
   readParam(nh, "contour/outlier_coef", &rp_contour_outlier, 3.0f);
+  readParam(nh, "contour/limit/min_size", &rp_contour_min_size, 1000);
+  readParam(nh, "contour/limit/max_size", &rp_contour_max_size, 10000);
+  readParam(nh, "contour/limit/angle", &rp_contour_max_angle, 1.0f);
 
   image_sub = it.subscribe("/camera/color/image_raw", 1, &Visuals::imgcb, this);
   point_pub = nh.advertise<mavros_msgs::PositionTarget>(DT_CAM_TOPIC, 1);
@@ -69,7 +72,7 @@ void Visuals::run() {
   }
 
   // Init optical flow
-  cvtColor(frame, frame_gray_masked_old, CV_BGR2GRAY);
+  cv::cvtColor(frame, frame_gray_masked_old, CV_BGR2GRAY);
   frame_old_time = frame_time;
   image_flag = false;
 
