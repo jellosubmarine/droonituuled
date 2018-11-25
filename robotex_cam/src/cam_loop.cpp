@@ -60,6 +60,8 @@ void Visuals::removeOutliers() {
         "], min dist sq = " << min_dist_abs);
 
       centroids.erase(centroids.begin() + i);
+      contours.erase(contours.begin() + i);
+      mu.erase(mu.begin() + i);
       --i;
     }
   }
@@ -162,6 +164,8 @@ void Visuals::process() {
       if (dist2(centroids[i], centroids[j]) < CAM_CONTOUR_MIN_DIST2) {
         ROS_INFO("Removing duplicate centroid");
         centroids.erase(centroids.begin() + j);
+        contours.erase(contours.begin() + j);
+        mu.erase(mu.begin() + j);
         --j;
       }
     }
@@ -229,6 +233,12 @@ void Visuals::process() {
   for (i = 1; i < centroids.size(); i++) {
     circle(frame, centroids[i], 4, Scalar(100, 80, 50), -1, 8, 0);
     circle(frame, weighted_centroids[i], 4, Scalar(100, 80, 50), 2, 8, 0);
+    float angle = contour_angle(mu[i]);
+    Point2f linePoint(
+      centroids[i].x + 50.0 * sin(angle),
+      centroids[i].y - 50.0 * cos(angle));
+    cv::arrowedLine(frame, centroids[i], linePoint,
+      Scalar(150, 90, 30), 2, 8, 0, 0.1);
   }
 
   // Draw average and bottom markers and heading line
@@ -285,7 +295,7 @@ void Visuals::process() {
 #endif
 
   // Update for next frame
-  //dynamicMask();
+  // dynamicMask();
   frame_gray_masked.copyTo(frame_gray_masked_old);
   frame_old_time = frame_time;
   of_old_points = of_new_points;

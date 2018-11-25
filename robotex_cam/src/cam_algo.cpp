@@ -154,5 +154,5 @@ float contour_angle(const cv::Moments& m) {
   float mu20p = m.mu20 / m.m00;
   float mu02p = m.mu02 / m.m00;
   float mu11p = m.mu11 / m.m00;
-  return 0.5f * atan(2.0f * mu11p / (mu20p - mu02p));
+  return 0.5f * atan2(-2.0f * mu11p, mu02p - mu20p );
 }
