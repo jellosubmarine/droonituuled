@@ -17,12 +17,14 @@
 #include "offb_controller.hpp"
 #include "offb_pid.hpp"
 
+extern volatile int g_flight_exit;
 
 class OffbController {
 public:
   int init();
+  void prepStandby();
+  int prepFlight();
   void loop();  // Main flight loop
-  // static void shutdown();
 
   // Visuals
   #ifdef OFFB_SHOW_VISUALS
@@ -40,15 +42,16 @@ public:
   // Ros Comms
   ros::NodeHandle nh;
 
+
+private:
+  // Ros Comms
   ros::ServiceClient mode_client;
   ros::ServiceClient arm_client;
   ros::ServiceClient stream_rate_client;
-
   ros::Subscriber stateSub;
   ros::Subscriber vfrSub;
   ros::Subscriber imuSub;
   ros::Subscriber camSub;
-
   ros::Publisher raw_pub;
 
   // Stream rate
@@ -57,11 +60,10 @@ public:
   int rp_stream_rate;
   bool stream_on_off;
 
-private:
   // Utilities
   template<typename T> void readParam(const std::string& param_name, T* var, const T& defaultVal);
   int setMode(std::string modeName);
-  int armVehicle();
+  int waitForArm();
   void zeroAltitude();
   ros::Timer startTimeout(double duration);
 

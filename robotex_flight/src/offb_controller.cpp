@@ -12,6 +12,10 @@
  * Set up mavros communication, connect to FCU, arm vehicle and zero altitude
  */
 int OffbController::init() {
+  #ifdef OFFB_VERBOSE
+    ROS_INFO("Initialising flight controller");
+  #endif
+
   // Load ros parameters
   readParam("limit/abort/altitude", &rp_lim_abort_alt, 2.0f);
   readParam("limit/abort/lost_time", &rp_lim_abort_lost_time, 10.0f);
@@ -113,37 +117,49 @@ int OffbController::init() {
   #endif
 
   // Connect to FCU
-  ROS_INFO("Waiting for FCU connection");
+  #ifdef OFFB_VERBOSE
+    ROS_INFO("Waiting for FCU connection");
+  #endif
   ros::Rate loopRate(OFFB_START_LOOP_RATE);
 
   ros::Timer t = startTimeout(OFFB_GEN_TIMEOUT);
-  while (ros::ok() && !currentState.connected && !timeout) {
+  while (!g_flight_exit &&
+         ros::ok() &&
+         !currentState.connected &&
+         !timeout) {
     ros::spinOnce();
     loopRate.sleep();
   }
   t.stop();
 
-  #ifdef OFFB_VERBOSE
-    if (ros::ok() && currentState.connected) ROS_INFO("Connected to FCU");
-  #endif
+  if (ros::ok() && currentState.connected) {
+    ROS_INFO("Connected to FCU");
+    return 1;
+  }
 
-  if (!setMode("STABILIZE")) return 0;     // Enter stabilize mode
-  if (!armVehicle()) return 0;             // Arm vehice
-  if (!setMode("GUIDED_NOGPS")) return 0;  // Set guided_nogps mode
-
-  zeroAltitude();
-  return 1;
+  return 0;
 }
 
-/**
- * Stops the flight loop and shuts down ros
- */
- /*
-void OffbController::shutdown() {
-  //setMode("LAND");
-  ros::shutdown();
+// Waits for the motors to be disarmed before next flight
+void OffbController::prepStandby() {
+  ROS_INFO("Waiting for DISARM");
+  ros::Rate loopRate(OFFB_START_LOOP_RATE);
+
+  while (!g_flight_exit && currentState.armed) {
+    ros::spinOnce();
+    loopRate.sleep();
+  }
 }
-*/
+
+// Preps the drone and controller for flight
+int OffbController::prepFlight() {
+    if (!setMode("STABILIZE")) return 0;     // Enter stabilize mode
+    if (!waitForArm()) return 0;             // Arm vehice
+    if (!setMode("GUIDED_NOGPS")) return 0;  // Set guided_nogps mode
+    zeroAltitude();
+    return 1;
+}
+
 
 /** CALLBACKS **/
 
@@ -164,8 +180,10 @@ void OffbController::camCB (const mavros_msgs::PositionTarget::ConstPtr& msg) {
   camData = *msg;
 }
 
-void OffbController::timeoutCB (const ros::TimerEvent&){
-  ROS_INFO("Timeout triggered");
+void OffbController::timeoutCB(const ros::TimerEvent&) {
+  #ifdef OFFB_VERBOSE
+    ROS_INFO("Timeout triggered");
+  #endif
   timeout = true;
 }
 
@@ -202,20 +220,22 @@ ros::Timer OffbController::startTimeout(double duration) {
  */
 void OffbController::zeroAltitude() {
   int sampleCounter = 0;
-  double altSum = 0;
-  ROS_INFO("Determining altitude offset");
+  float altSum = 0;
+  #ifdef OFFB_VERBOSE
+    ROS_INFO("Determining altitude offset");
+  #endif
 
   ros::Rate loopRate(OFFB_START_LOOP_RATE);
   ros::Timer t = startTimeout(OFFB_ZEROALT_TIME);
-  while(ros::ok() && !timeout) {
+  while (!g_flight_exit && ros::ok() && !timeout) {
+    ros::spinOnce();
     altSum += flightData.altitude;
     sampleCounter++;
-    ros::spinOnce();
     loopRate.sleep();
   }
   t.stop();
 
-  zeroAlt = altSum / double(sampleCounter);
+  zeroAlt = altSum / float(sampleCounter);
   ROS_INFO_STREAM("Altitude offset: " << zeroAlt);
 }
 
@@ -235,14 +255,14 @@ int OffbController::setMode(std::string modeName) {
 		return 0;
 	};
 
-	ros::Timer t = startTimeout(OFFB_GEN_TIMEOUT);
-	while ( ros::ok() &&
-	 				currentState.mode != modeName &&
-				 	! timeout )
-	{
-		ros::spinOnce();
-		delay.sleep();
-	}
+  ros::Timer t = startTimeout(OFFB_GEN_TIMEOUT);
+  while (!g_flight_exit &&
+         ros::ok() &&
+         currentState.mode != modeName &&
+         !timeout) {
+    ros::spinOnce();
+    delay.sleep();
+  }
   t.stop();
 
 	if (ros::ok() && currentState.mode == modeName) {
@@ -256,39 +276,25 @@ int OffbController::setMode(std::string modeName) {
 
 
 /**
- * Attempts to arm the vehicle
+ * Waits for the vehicle to be armed
  * Returns 1 on success, 0 on failure
  */
-int OffbController::armVehicle() {
+int OffbController::waitForArm() {
+  ROS_INFO("Waiting for ARM");
+  ros::Rate loopRate(OFFB_START_LOOP_RATE);
 
-  #ifndef OFFB_WAIT_FOR_ARM
-    ROS_INFO("Arming vehicle");
-    mavros_msgs::CommandBool arm_cmd;
-    arm_cmd.request.value = true;
-
-    if (!arm_client.call(arm_cmd)) {
-      ROS_INFO("Arm call failed");
-      return 0;
-    };
-  #else
-    ROS_INFO("Waiting for vehicle to be armed");
-  #endif
-
-
-  ros::Rate delay(OFFB_START_LOOP_RATE);
-  ros::Timer t = startTimeout(OFFB_ARM_TIMEOUT);
-  while ( ros::ok() &&
-          !currentState.armed &&
-          currentState.mode != "LAND" &&
-          ! timeout )
-  {
+  while (!g_flight_exit &&
+         !ros::isShuttingDown() &&
+         !currentState.armed &&
+         currentState.mode != "LAND") {
+    loopRate.sleep();
     ros::spinOnce();
-    delay.sleep();
   }
-  t.stop();
 
-  if (ros::ok() && currentState.armed) {
-    ROS_INFO("Vehicle armed");
+  if (!g_flight_exit && ros::ok() && currentState.armed) {
+    #ifdef OFFB_VERBOSE
+      ROS_INFO("Vehicle armed");
+    #endif
     return 1;
   }
 

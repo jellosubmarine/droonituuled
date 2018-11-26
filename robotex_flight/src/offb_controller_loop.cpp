@@ -28,12 +28,17 @@ void OffbController::debug(double w, double x, double y, double z) {
 
 // Main flight loop
 void OffbController::loop() {
+  #ifdef OFFB_VERBOSE
+    ROS_INFO("Starting flight loop");
+  #endif
+
   mavros_msgs::AttitudeTarget rawAtt;
   rawAtt.type_mask =  rawAtt.IGNORE_ROLL_RATE |
                       rawAtt.IGNORE_PITCH_RATE;
 
   geometry_msgs::Point floorPoint;
   double yaw = 0.0, pitch = 0.0, roll = 0.0;
+  double relAlt = 0.0;
 
   altPID.target = rp_pid_alt_target;
   pitchPID.target = rp_pid_pitch_target;
@@ -50,18 +55,12 @@ void OffbController::loop() {
   int flightStatus =
     (flightData.altitude - zeroAlt >= OFFB_MIN_FLIGHT_ALT) *
     FLIGHT_STATUS_FLYING;
-  ROS_INFO_STREAM( "Flight status " << flightStatus );
 
-/*
-  mavros_msgs::AttitudeTarget zzzz;
-  offb_euler2quat(5.0*M_PI/180.0, 5.0*M_PI/180.0, 0.0, &(zzzz.orientation));
-  ROS_INFO_STREAM( "zzzz: " << zzzz );
-*/
 
   ROS_INFO("Starting flight loop");
-  while (!ros::isShuttingDown() && currentState.mode != "LAND") {
+  while (!g_flight_exit && !ros::isShuttingDown() && currentState.mode != "LAND") {
     t = ros::Time::now().toSec();
-    double relAlt = flightData.altitude - zeroAlt;
+    relAlt = flightData.altitude - zeroAlt;
 
 
     // Check abort altitude

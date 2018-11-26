@@ -1,4 +1,6 @@
-// #include <csignal>
+#include <csignal>
+// #include <cstdio>
+#include <iostream>
 
 #include "ros/ros.h"
 #include "ros/time.h"
@@ -25,28 +27,21 @@
 #define GPS_TYPE_AUTO         1
 
 
+volatile int g_flight_exit = 0;
+
 void sigintHandler(int sig) {
-	/*
-	ros::NodeHandle nh;
-	ros::ServiceClient mode_client = nh.serviceClient<mavros_msgs::SetMode> ("/mavros/set_mode");
-	mavros_msgs::SetMode modeCmd;
-	modeCmd.request.custom_mode = "LAND";
-	if (ros::ok()) mode_client.call(modeCmd);
-	*/
+  std::cout << "Sigint Handler";
+  g_flight_exit = 1;
 }
+
 
 /* ============ MAIN ============ */
 
 int main(int argc, char **argv) {
-  // ros::init(argc, argv, "Droonituuled", ros::init_options::NoSigintHandler);
   ros::init(argc, argv, "robotex_flight");
-  // ROS_INFO("Inited robotex_flight");
-
   ros::NodeHandle nh;
   // ros::ServiceClient param_cl = nh.serviceClient<mavros_msgs::ParamSet> ("/mavros/param/set");
   // mavros_msgs::ParamSet paramMsg;
-
-  // signal(SIGINT, sigintHandler);
 
   // Set up controller
   OffbController ctrl;
@@ -56,10 +51,15 @@ int main(int argc, char **argv) {
     ros::Duration(6, 0).sleep();
   #endif
 
-  // ROS_INFO("Initialising controller");
+  signal(SIGINT, sigintHandler);
+
   if (ctrl.init()) {
-    // ROS_INFO("Starting controller loop");
-    ctrl.loop();
+    while (!g_flight_exit) {
+      ctrl.prepStandby();
+      if (ctrl.prepFlight()) {
+        ctrl.loop();
+      }
+    }
   } else {
     ROS_INFO("Failed to initialise flight controller");
   }
