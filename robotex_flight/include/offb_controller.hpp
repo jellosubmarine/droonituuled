@@ -10,7 +10,6 @@
 #include "geometry_msgs/Quaternion.h"
 #include "geometry_msgs/PointStamped.h"
 #include "mavros_msgs/PositionTarget.h"
-#include "mavros_msgs/StreamRate.h"
 #include "opencv2/core.hpp"
 
 #include "dt_config.hpp"
@@ -41,24 +40,17 @@ public:
 
   // Ros Comms
   ros::NodeHandle nh;
-
+  int rp_stream_rate;
 
 private:
   // Ros Comms
   ros::ServiceClient mode_client;
   ros::ServiceClient arm_client;
-  ros::ServiceClient stream_rate_client;
   ros::Subscriber stateSub;
   ros::Subscriber vfrSub;
   ros::Subscriber imuSub;
   ros::Subscriber camSub;
   ros::Publisher raw_pub;
-
-  // Stream rate
-  mavros_msgs::StreamRate srv;
-  int stream_id;
-  int rp_stream_rate;
-  bool stream_on_off;
 
   // Utilities
   template<typename T> void readParam(const std::string& param_name, T* var, const T& defaultVal);

@@ -48,9 +48,9 @@ int OffbController::init() {
   readParam("pid/yaw/p", &rp_pid_yaw_p, 0.0f);
   readParam("pid/yaw/d", &rp_pid_yaw_d, 0.0f);
   readParam("pid/roll_yaw_coupling", &rp_roll_yaw_coupling, 0.0f);
-  readParam("stream/id", &stream_id, 0);
+  // readParam("stream/id", &stream_id, 0);
   readParam("stream/rate", &rp_stream_rate, 10);
-  readParam("stream/on_off", &stream_on_off, true);
+  // readParam("stream/on_off", &stream_on_off, true);
 
   // Set up comms
   #ifdef OFFB_VERBOSE
@@ -58,7 +58,6 @@ int OffbController::init() {
   #endif
   arm_client = nh.serviceClient<mavros_msgs::CommandBool> ("/mavros/cmd/arming");
   mode_client = nh.serviceClient<mavros_msgs::SetMode> ("/mavros/set_mode");
-  stream_rate_client = nh.serviceClient<mavros_msgs::StreamRate>("/mavros/set_stream_rate");
 
   stateSub = nh.subscribe<mavros_msgs::State> ("/mavros/state", 3, &OffbController::stateCB, this);
   vfrSub = nh.subscribe<mavros_msgs::VFR_HUD> ("/mavros/vfr_hud", 3, &OffbController::vfrCB, this);
@@ -95,20 +94,6 @@ int OffbController::init() {
     OFFB_PID_YAW_DTC, OFFB_PID_YAW_DK, OFFB_PID_YAW_BIAS,
     rp_pid_yaw_out_max, rp_pid_yaw_out_min,
     rp_pid_yaw_out_ramp);
-
-  // Set stream rate
-  srv.request.stream_id = stream_id;
-  srv.request.message_rate = rp_stream_rate;
-  srv.request.on_off = stream_on_off;
-  if(stream_rate_client.call(srv)){
-    #ifdef OFFB_VERBOSE
-      ROS_INFO("Service called");
-    #endif
-  }else{
-    #ifdef OFFB_VERBOSE
-      ROS_INFO("Failed to call service");
-    #endif
-  } 
 
 
   // Init visuals

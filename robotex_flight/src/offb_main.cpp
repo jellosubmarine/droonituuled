@@ -4,6 +4,7 @@
 
 #include "ros/ros.h"
 #include "ros/time.h"
+#include "mavros_msgs/StreamRate.h"
 // #include "mavros_msgs/ParamSet.h"
 // #include "mavros_msgs/SetMode.h"
 
@@ -34,6 +35,20 @@ void sigintHandler(int sig) {
   g_flight_exit = 1;
 }
 
+int setStreamRate(ros::NodeHandle *nh, const OffbController &ctrl) {
+  ros::ServiceClient stream_rate_client = nh->serviceClient<mavros_msgs::StreamRate>("/mavros/set_stream_rate");
+  mavros_msgs::StreamRate rateMsg;
+
+  rateMsg.request.stream_id = 0;
+  rateMsg.request.message_rate = ctrl.rp_stream_rate;
+  rateMsg.request.on_off = 1;
+  if (!stream_rate_client.call(rateMsg)) {
+    ROS_INFO("Failed to set Pixhawk stream rate");
+    return 0;
+  }
+
+  return 1;
+}
 
 /* ============ MAIN ============ */
 
@@ -53,7 +68,7 @@ int main(int argc, char **argv) {
 
   signal(SIGINT, sigintHandler);
 
-  if (ctrl.init()) {
+  if (ctrl.init() && setStreamRate(&nh, ctrl)) {
     while (!g_flight_exit) {
       ctrl.prepStandby();
       if (ctrl.prepFlight()) {

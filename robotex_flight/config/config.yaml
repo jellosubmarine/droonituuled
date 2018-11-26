@@ -55,8 +55,8 @@ pid:
 
   roll_yaw_coupling: 0.1
 
-  stream:
-    id:           0   # Set stream ID
-    rate:         10  # Stream rate
-    on_off:       true   # boolean
-
+# Pixhawk output stream
+stream:
+  # id:            0  # Set stream ID
+  rate:           10  # Stream rate
+  # on_off:     true  # boolean
