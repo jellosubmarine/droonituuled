@@ -75,6 +75,9 @@ private:
   int rp_dynmask_max_width, rp_dynmask_req_contours;
   int rp_contour_min_size, rp_contour_max_size;
   float rp_contour_outlier, rp_contour_max_angle;
+  int rp_rect_min_size, rp_rect_max_size;
+  float rp_rect_min_ratio, rp_rect_max_ratio;
+  float rp_rect_max_angle;
 
   // Frame storage
   bool image_flag;
@@ -101,12 +104,16 @@ private:
   std::vector<cv::Moments> mu;
   cv::Moments moments;
   std::vector<cv::Vec4i> hierarchy;
-  std::vector<cv::Point2f> centroids, weighted_centroids;
+  std::vector<cv::Point2f> centroids;  // weighted_centroids;
   std::vector<float> line_data, contour_angles;
   cv::Mat distances;
   cv::Point2f bottom_centroid, mean_centroid;
+  // cv::RotatedRect contour_rect;
+  std::vector<cv::RotatedRect> contour_rects;
+  cv::Point2f contour_rect_points[4];
   std::vector<float> c_x, c_y;
-  float Z, Z1, Z2, min_dist_abs, min_dist_cur, contour_area;
+  float Z, Z1, Z2, min_dist_abs, min_dist_cur;  // , contour_area;
+  float rect_area, rect_ratio, temp;
   int i, j, s;
 
 

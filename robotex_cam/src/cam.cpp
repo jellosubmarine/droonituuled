@@ -40,6 +40,11 @@ Visuals::Visuals(ros::NodeHandle &nh) : it(nh) {
   readParam(nh, "contour/limit/min_size", &rp_contour_min_size, 1000);
   readParam(nh, "contour/limit/max_size", &rp_contour_max_size, 10000);
   readParam(nh, "contour/limit/angle", &rp_contour_max_angle, 1.0f);
+  readParam(nh, "contour/rect/min_size", &rp_rect_min_size, 1000);
+  readParam(nh, "contour/rect/max_size", &rp_rect_max_size, 4000);
+  readParam(nh, "contour/rect/min_ratio", &rp_rect_min_ratio, 2.0f);
+  readParam(nh, "contour/rect/max_ratio", &rp_rect_max_ratio, 5.0f);
+  readParam(nh, "contour/rect/max_angle", &rp_rect_max_angle, 55.0f);
 
   image_sub = it.subscribe("/camera/color/image_raw", 1, &Visuals::imgcb, this);
   point_pub = nh.advertise<mavros_msgs::PositionTarget>(DT_CAM_TOPIC, 1);

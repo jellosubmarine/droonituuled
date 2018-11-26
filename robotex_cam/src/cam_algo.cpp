@@ -68,6 +68,7 @@ float cov(const std::vector<float> &A, const std::vector<float> &B) {
 /* Functions belonging to Visuals */
 
 // Applies weighing to centroid X coordinates.
+/*
 void Visuals::weighCentroids() {
   // Uncomment to disable
   // weighted_centroids = centroids;
@@ -85,6 +86,7 @@ void Visuals::weighCentroids() {
       centroids[i].y));
   }
 }
+*/
 
 // Creates a frame mask based on the number of contours
 void Visuals::dynamicMask() {

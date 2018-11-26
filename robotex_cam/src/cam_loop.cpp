@@ -134,44 +134,70 @@ void Visuals::process() {
   Canny(blurr, dil, CAM_CANNY_THR_LOW, CAM_CANNY_THR_HIGH, CAM_CANNY_KERNEL_SIZE);    // Find edges
   dilate(dil, canny_output, cv::Mat(), cv::Point(-1, -1), 4, 1, 1);                           // Get rid of holes
   // erode(dil, dil, Mat(), Point(-1, -1), 4, 1, 1);
-  findContours(canny_output, contours, hierarchy,
-    cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));  // Get contours
+  findContours(canny_output, contours, cv::RETR_EXTERNAL,
+    cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
 
 
   // Clear storage vectors
   mu.clear();
   contour_angles.clear();
+  contour_rects.clear();
   centroids.clear();
-  weighted_centroids.clear();
+  // weighted_centroids.clear();
 
   // Filter and process contours
   for (i = 0; i < contours.size(); ++i) {
-    contour_area = cv::contourArea(contours[i]);
+    // contour_area = cv::contourArea(contours[i]);
+    contour_rects.push_back(cv::minAreaRect(contours[i]));
+
+    if (contour_rects[i].size.width > contour_rects[i].size.height) {
+      temp = contour_rects[i].size.width;
+      contour_rects[i].size.width = contour_rects[i].size.height;
+      contour_rects[i].size.height = temp;
+      contour_rects[i].angle += 90;  // degrees
+    }
+
+    rect_area = float(contour_rects[i].size.width) *
+                float(contour_rects[i].size.height);
+    rect_ratio = float(contour_rects[i].size.height) /
+                 float(contour_rects[i].size.width);
+    // if (rect_ratio < 1.0f) rect_ratio = 1.0f / rect_ratio;
 
     // Check for size limits
-    if (contour_area >= rp_contour_min_size &&
-        contour_area <= rp_contour_max_size) {
-      // mu.push_back(cv::moments(contours[i], false));
-      this->moments = cv::moments(contours[i], false);
-      contour_angles.push_back(contour_angle(this->moments));
+    // if (contour_area >= rp_contour_min_size &&
+    //     contour_area <= rp_contour_max_size) {
+
+    if (rect_area >= rp_rect_min_size &&
+        rect_area <= rp_rect_max_size &&
+        rect_ratio >= rp_rect_min_ratio &&
+        rect_ratio <= rp_rect_max_ratio &&
+        fabs(contour_rects[i].angle) <= rp_rect_max_angle) {
+
+      centroids.push_back(contour_rects[i].center);
+
+      // this->moments = cv::moments(contours[i], false);
+      // contour_angles.push_back(contour_angle(this->moments));
 
       // Check contour angle
-      if (fabs(contour_angles[i]) <= rp_contour_max_angle) {
-        centroids.push_back(cv::Point2f(
-          float(this->moments.m10) / float(this->moments.m00),
-          float(this->moments.m01) / float(this->moments.m00)));
-      } else {
-        contour_angles.erase(contour_angles.begin() + i);
-        contours.erase(contours.begin() + i);
-        --i;
-      }
+      // if (fabs(contour_angles[i]) <= rp_contour_max_angle) {
+      //   centroids.push_back(cv::Point2f(
+      //     float(this->moments.m10) / float(this->moments.m00),
+      //     float(this->moments.m01) / float(this->moments.m00)));
+      // } else {
+      //   contour_angles.erase(contour_angles.begin() + i);
+      //   contours.erase(contours.begin() + i);
+      //   contour_rects.erase(contour_rects.begin() + i);
+      //   --i;
+      // }
     } else {
       contours.erase(contours.begin() + i);
+      contour_rects.erase(contour_rects.begin() + i);
       --i;
     }
   }
 
   // Remove close lying centroids
+  /*
   for (i = 0; i < centroids.size(); ++i) {
     for (j = i+1; j < centroids.size(); ++j) {
       if (dist2(centroids[i], centroids[j]) < CAM_CONTOUR_MIN_DIST2) {
@@ -183,6 +209,7 @@ void Visuals::process() {
       }
     }
   }
+  */
 
 /*
   // todo: maybe use stats for mask width calculation
@@ -194,14 +221,14 @@ void Visuals::process() {
   }
 */
   if (centroids.size()) {
-    removeOutliers();
+    // removeOutliers();
     // weighCentroids();
-    weighted_centroids = centroids;
+    // weighted_centroids = centroids;
 
-    mean_point(weighted_centroids, &mean_centroid);
-    if (weighted_centroids.size() > 1) {
-      bottom_centroid.x = convertXCoord(weighted_centroids[0].x);
-      bottom_centroid.y = convertYCoord(weighted_centroids[0].y);
+    mean_point(centroids, &mean_centroid);
+    if (centroids.size() > 1) {
+      bottom_centroid.x = convertXCoord(centroids[0].x);
+      bottom_centroid.y = convertYCoord(centroids[0].y);
     } else {
       bottom_centroid.x = 0.0;
       bottom_centroid.y = -CAM_FRAME_OFFSET_Y;
@@ -247,12 +274,20 @@ void Visuals::process() {
   // Draw centroid markers
   for (i = 1; i < centroids.size(); i++) {
     circle(frame, centroids[i], 4, cv::Scalar(100, 80, 50), -1, 8, 0);
-    circle(frame, weighted_centroids[i], 4, cv::Scalar(100, 80, 50), 2, 8, 0);
+    circle(frame, centroids[i], 4, cv::Scalar(100, 80, 50), 2, 8, 0);
     cv::Point2f linePoint(
-      centroids[i].x + 50.0 * sin(contour_angles[i]),
-      centroids[i].y - 50.0 * cos(contour_angles[i]));
+      centroids[i].x + 50.0 * sin(contour_rects[i].angle*CV_PI/180.0f),   // sin(contour_angles[i]),
+      centroids[i].y - 50.0 * cos(contour_rects[i].angle*CV_PI/180.0f));  // cos(contour_angles[i]));
     cv::arrowedLine(frame, centroids[i], linePoint,
       cv::Scalar(150, 90, 30), 2, 8, 0, 0.1);
+
+    contour_rects[i].points(contour_rect_points);
+    for (j = 0; j < 4; j++) {
+      cv::line(frame,
+        contour_rect_points[j], contour_rect_points[(j+1)%4],
+        cv::Scalar(130, 70, 120));
+    }
+    // ROS_INFO_STREAM("Contour size: " << contour_rects[i].size);
   }
 
   // Draw average and bottom markers and heading line
@@ -266,7 +301,7 @@ void Visuals::process() {
 
     circle(frame, midPoint, 10, cv::Scalar(30, 200, 50), -1, 8, 0);
     circle(frame, centroids[0], 7, cv::Scalar(100, 150, 50), -1, 8, 0);
-    circle(frame, weighted_centroids[0], 7, cv::Scalar(100, 150, 50), 2, 8, 0);
+    circle(frame, centroids[0], 7, cv::Scalar(100, 150, 50), 2, 8, 0);
     cv::arrowedLine(frame, midPoint, hdgPoint, cv::Scalar(150, 50, 30), 2, 8, 0, 0.1);
   }
 
