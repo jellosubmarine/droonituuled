@@ -29,7 +29,7 @@ pid:
     output:
       min:  deg(-10) # Degrees backwards
       max:  deg(+10) # Degrees forward
-      ramp: deg(20)  # Degrees / sec
+      ramp: deg(30)  # Degrees / sec
     p:     -0.02     # neg accel fwd / 9.81
     d:      0.09     # accel fwd / 9.81
 
@@ -39,7 +39,7 @@ pid:
     output:
       min:  deg(-10) # Degrees backwards
       max:  deg(+10) # Degrees forward
-      ramp: deg(20)  # Degrees / sec
+      ramp: deg(30)  # Degrees / sec
     p:     -0.05     # neg accel right / 9.81
     d:      0.10     # accel right / 9.81
 
@@ -53,7 +53,8 @@ pid:
     p:     -0.7      # neg accel right / 9.81
     d:     -1.2      # accel right / 9.81
 
-  roll_yaw_coupling: 0.1
+  roll_yaw_coupling:  0.08
+  lost_yaw_rate:     30.0
 
 # Pixhawk output stream
 stream:

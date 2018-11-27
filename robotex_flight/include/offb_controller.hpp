@@ -89,7 +89,7 @@ private:
   float rp_pid_yaw_target;
   float rp_pid_yaw_out_min, rp_pid_yaw_out_max, rp_pid_yaw_out_ramp;
   float rp_pid_yaw_p, rp_pid_yaw_d;
-  float rp_roll_yaw_coupling;
+  float rp_roll_yaw_coupling, rp_lost_yaw_rate;
 
   // Visuals
   #ifdef OFFB_SHOW_VISUALS

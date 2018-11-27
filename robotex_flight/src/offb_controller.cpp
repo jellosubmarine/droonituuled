@@ -48,6 +48,7 @@ int OffbController::init() {
   readParam("pid/yaw/p", &rp_pid_yaw_p, 0.0f);
   readParam("pid/yaw/d", &rp_pid_yaw_d, 0.0f);
   readParam("pid/roll_yaw_coupling", &rp_roll_yaw_coupling, 0.0f);
+  readParam("pid/lost_yaw_rate", &rp_lost_yaw_rate, 30.0f);
   // readParam("stream/id", &stream_id, 0);
   readParam("stream/rate", &rp_stream_rate, 10);
   // readParam("stream/on_off", &stream_on_off, true);

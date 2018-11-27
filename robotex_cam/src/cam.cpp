@@ -9,8 +9,6 @@
 #include "dt_config.hpp"
 #include "cam.hpp"
 
-using namespace std;
-using namespace cv;
 
 #ifdef DT_BUILD_DEV
 #pragma message "robotex_cam dev build"
@@ -34,12 +32,6 @@ Visuals::Visuals(ros::NodeHandle &nh) : it(nh) {
   // Read parameters (third argument is default value, if unable to fetch parameter)
   readParam(nh, "of/refresh_interval", &rp_of_refresh_int, 15);
   readParam(nh, "frame/mask/saturation_thr", &rp_mask_sat_thr, 50);
-  readParam(nh, "frame/mask/max_width", &rp_dynmask_max_width, 0);
-  readParam(nh, "frame/mask/min_contours", &rp_dynmask_req_contours, 3);
-  readParam(nh, "contour/outlier_coef", &rp_contour_outlier, 3.0f);
-  readParam(nh, "contour/limit/min_size", &rp_contour_min_size, 1000);
-  readParam(nh, "contour/limit/max_size", &rp_contour_max_size, 10000);
-  readParam(nh, "contour/limit/angle", &rp_contour_max_angle, 1.0f);
   readParam(nh, "contour/rect/min_size", &rp_rect_min_size, 1000);
   readParam(nh, "contour/rect/max_size", &rp_rect_max_size, 4000);
   readParam(nh, "contour/rect/min_ratio", &rp_rect_min_ratio, 2.0f);
@@ -61,7 +53,7 @@ void Visuals::readParam(const ros::NodeHandle& nh, const std::string& param_name
 
 
 #ifdef DT_BUILD_DEV
-  Visuals::~Visuals() { destroyWindow(CAM_VIS_NAME); }
+  Visuals::~Visuals() { cv::destroyWindow(CAM_VIS_NAME); }
 #endif
 
 
@@ -81,16 +73,22 @@ void Visuals::run() {
   frame_old_time = frame_time;
   image_flag = false;
 
+  of_status.reserve(CAM_GF_MAX_POINTS);
+  of_old_points.reserve(CAM_GF_MAX_POINTS);
+  of_new_points.reserve(CAM_GF_MAX_POINTS);
+  of_velocities.reserve(CAM_GF_MAX_POINTS);
+  of_criteria = cvTermCriteria(
+    cv::TermCriteria::COUNT | cv::TermCriteria::EPS, 20, 0.03);
+  of_win_size = cvSize(15, 15);
+  of_refresh_counter = rp_of_refresh_int;
+
   // Ensure clean storage
   frame_gray = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
   frame_gray_masked = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
   frame_gray_masked_old = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
-
-  // feature_detector = cv::FastFeatureDetector::create(CAM_FAST_THRESHOLD, true);
-  of_status.reserve(CAM_GF_MAX_POINTS);
-  of_criteria = cvTermCriteria(TermCriteria::COUNT | TermCriteria::EPS, 20, 0.03);
-  of_win_size = cvSize(15, 15);
-  of_refresh_counter = rp_of_refresh_int;
+  contours.reserve(20);
+  contour_rects.reserve(20);
+  centroids.reserve(10);
 
   // Create image mask
   edge_mask = cv::Mat::zeros(frame.size(), CV_8UC1);
@@ -122,8 +120,8 @@ int main(int argc, char **argv) {
   Visuals node(nh);
 
 #ifdef DT_BUILD_DEV
-  namedWindow(CAM_VIS_NAME, WINDOW_AUTOSIZE);
-  startWindowThread();
+  cv::namedWindow(CAM_VIS_NAME, cv::WINDOW_AUTOSIZE);
+  cv::startWindowThread();
 #endif
 
   node.run();

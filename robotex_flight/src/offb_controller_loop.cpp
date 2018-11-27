@@ -108,8 +108,7 @@ void OffbController::loop() {
     else {
       // Check if drone has lost visuals
       if (camData.position.z <= 1 &&
-          ! GET_BIT(flightStatus, FLIGHT_STATUS_LOST))
-      {
+          !GET_BIT(flightStatus, FLIGHT_STATUS_LOST)) {
         ROS_INFO("Set LOST status");
         SET_BIT(flightStatus, FLIGHT_STATUS_LOST);
         CLEAR_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
@@ -121,7 +120,7 @@ void OffbController::loop() {
       if (GET_BIT(flightStatus, FLIGHT_STATUS_LOST)) {
         // Look for any lines unless we're taking off
         if (fabs(flightData.climb) < rp_lim_nav_vs)
-          rawAtt.body_rate.z = OFFB_LOST_YAW_RATE;
+          rawAtt.body_rate.z = rp_lost_yaw_rate;
         else
           rawAtt.body_rate.z = 0.0;
 
@@ -150,8 +149,7 @@ void OffbController::loop() {
         offb_cam2floor(
           camData.position.x, camData.position.y, flightData.altitude,
           OFFB_CAM_ANGLE - pitch, OFFB_CAM_FOV_X, OFFB_CAM_FOV_Y,
-          &floorPoint
-        );
+          &floorPoint);
 
         // Navigate
         if (GET_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE)) {
@@ -191,18 +189,16 @@ void OffbController::loop() {
       }  // lost
     }  // airborne
 
-    // debug(rawAtt.orientation.w, rawAtt.orientation.x, rawAtt.orientation.y, rawAtt.orientation.z);
-    debug(floorPoint.y, floorPoint.x, pitchPID.output*180.0/M_PI, rollPID.output*180.0/M_PI);
-    // debug(camData.yaw*180.0/M_PI, yawPID.output*180.0/M_PI, -imuData.angular_velocity.z*180.0/M_PI, flightData.altitude);
-    // debug(rawAtt.thrust, flightData.altitude, 0.0, 0.0);
+
+    debug(camData.yaw, floorPoint.y, floorPoint.x, 0.0f);
     raw_pub.publish(rawAtt);
 
     #ifdef OFFB_SHOW_VISUALS
       updateVisuals(floorPoint.x, floorPoint.y, camData.yaw);
     #endif
 
-    ros::spinOnce();
     loopRate.sleep();
+    ros::spinOnce();
   }
 
   ROS_INFO("Flight loop finished");

@@ -8,15 +8,8 @@ of:
 frame:
   mask:
     saturation_thr:  50
-    max_width:      200  # px
-    min_contours:     3  # Min number of req contours to shrink the frame
 
 contour:
-  outlier_coef:     3.0  # Distance factor
-  limit:
-    min_size:      1000
-    max_size:      4000
-    angle:     deg(55.0)
   rect:
     min_size:      1000
     max_size:      4000
