@@ -2,7 +2,7 @@
 
 # Optical flow
 of:
-  refresh_interval: 15  # frames
+  refresh_interval: 8  # frames
 
 
 frame:
@@ -14,5 +14,5 @@ contour:
     min_size:      1000
     max_size:      4000
     min_ratio:      2.0
-    max_ratio:      5.0
+    max_ratio:      6.0
     max_angle:     55.0  # in degrees not radians
