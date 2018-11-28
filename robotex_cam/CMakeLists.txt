@@ -144,6 +144,11 @@ add_executable( ${PROJECT_NAME}_main
 	src/cam_loop.cpp
 	src/cam_algo.cpp
 )
+add_executable( ${PROJECT_NAME}_spectator
+	src/cam_spectator.cpp
+	src/cam_loop.cpp
+	src/cam_algo.cpp
+)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -157,6 +162,10 @@ add_executable( ${PROJECT_NAME}_main
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries( ${PROJECT_NAME}_main
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+ )
+ target_link_libraries( ${PROJECT_NAME}_spectator
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
  )
