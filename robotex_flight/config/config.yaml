@@ -37,8 +37,8 @@ pid:
   roll:
     target: 0.0   # Metres right
     output:
-      min:  deg(-20) # Degrees backwards
-      max:  deg(+20) # Degrees forward
+      min:  deg(-20) # Degrees left
+      max:  deg(+20) # Degrees right
       ramp: deg(40)  # Degrees / sec
     p:     -0.04     # neg accel right / 9.81
     d:      0.10     # accel right / 9.81

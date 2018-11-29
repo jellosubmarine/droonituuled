@@ -1,0 +1,1 @@
+rqt_plot -e /mavros/vfr_hud/altitude /mavros/setpoint_raw/attitude/orientation /mavros/setpoint_raw/attitude/body_rate

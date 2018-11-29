@@ -1,5 +1,8 @@
-#include "offb_math.hpp"
 #include <cmath>
+
+#include "ros/ros.h"
+#include "offb_math.hpp"
+
 
 
 // Simplified projection transformation
@@ -31,9 +34,8 @@ void offb_euler2quat(double roll, double pitch, double yaw, geometry_msgs::Quate
     ret->z = sy * cr * cp - cy * sr * sp;
 }
 
-void offb_quat2euler( const geometry_msgs::Quaternion *q,
-                      double *roll, double *pitch, double *yaw )
-{
+void offb_quat2euler(const geometry_msgs::Quaternion *q,
+                     double *roll, double *pitch, double *yaw ) {
 	// roll (x-axis rotation)
 	double sinr_cosp = +2.0 * (q->w * q->x + q->y * q->z);
 	double cosr_cosp = +1.0 - 2.0 * (q->x * q->x + q->y * q->y);
@@ -41,10 +43,12 @@ void offb_quat2euler( const geometry_msgs::Quaternion *q,
 
 	// pitch (y-axis rotation)
 	double sinp = +2.0 * (q->w * q->y - q->z * q->x);
-	if (fabs(sinp) >= 1)
-		*pitch = copysign(M_PI / 2, sinp); // use 90 degrees if out of range
-	else
-		*pitch = asin(sinp);
+  if (fabs(sinp) >= 1.0) {
+    *pitch = copysign(M_PI / 2.0, sinp);  // use 90 degrees if out of range
+    ROS_INFO("WARN: sin(pitch) > 1.0");
+  } else {
+    *pitch = asin(sinp);
+  }
 
 	// yaw (z-axis rotation)
 	double siny_cosp = +2.0 * (q->w * q->z + q->x * q->y);

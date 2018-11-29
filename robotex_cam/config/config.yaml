@@ -7,7 +7,7 @@ of:
 
 frame:
   mask:
-    saturation_thr:  50
+    saturation_thr:  80
 
 contour:
   rect:

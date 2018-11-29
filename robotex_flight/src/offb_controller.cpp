@@ -140,7 +140,8 @@ void OffbController::prepStandby() {
 // Preps the drone and controller for flight
 int OffbController::prepFlight() {
     if (!setMode("STABILIZE")) return 0;     // Enter stabilize mode
-    if (!waitForArm()) return 0;             // Arm vehice
+    // if (!waitForArm()) return 0;             // Arm vehice
+    ROS_INFO("WARNING --- NOT WAITING FOR ARM --- DANGEROUS");
     if (!setMode("GUIDED_NOGPS")) return 0;  // Set guided_nogps mode
     zeroAltitude();
     return 1;
