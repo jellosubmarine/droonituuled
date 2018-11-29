@@ -9,10 +9,9 @@
 // Disregards roll angle
 // Normalised x and y from frame centre, zero angle = down
 // FOV = from centre to edge
-void offb_cam2floor( double x, double y, double alt,
-                     double cam_pitch, double cam_fov_x, double cam_fov_y,
-                     geometry_msgs::Point *ret ) {
-  //geometry_msgs::Point p;
+void offb_cam2floor(double x, double y, double alt,
+                    double cam_pitch, double cam_fov_x, double cam_fov_y,
+                    geometry_msgs::Point *ret) {
   ret->y = tan(cam_pitch + y * cam_fov_y) * alt;
   ret->x = sqrt(ret->y * ret->y + alt * alt) * tan(x * cam_fov_x);
 }

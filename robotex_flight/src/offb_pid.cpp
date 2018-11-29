@@ -1,6 +1,31 @@
 #include "offb_pid.hpp"
 #include <cmath>
 
+OffbPID::OffbPID() {
+  p = 0.0;
+  i = 0.0;
+  d = 0.0;
+  f = 0.0;
+  dTimeConst = 0.0;
+  dFilterGain = 0.0;
+  target = 0.0;
+  maxOutput = 0.0;
+  minOutput = 0.0;
+  maxOutputRamp = 0.0;
+  bias = 0.0;
+  prevOutput = 0.0;
+  output = 0.0;
+  iOut = 0.0;
+  dOut = 0.0;
+  dState = 0.0;
+  curInput = 0.0;
+  curTime = 0.0;
+  prevTime = 0.0;
+  curErr = 0.0;
+  prevErr = 0.0;
+  outputPRamp = 0.0;
+  outputNRamp = 0.0;
+}
 
 void OffbPID::conf(double P, double I, double D, double F, double DTC,
                 double DK, double outBias,
@@ -15,14 +40,17 @@ void OffbPID::conf(double P, double I, double D, double F, double DTC,
   maxOutput = maxOut;
   minOutput = minOut;
   maxOutputRamp = outRamp;
-
-  iOut = 0.0;
 }
 
 void OffbPID::initFirstInput(double input, double time) {
-  dState = target - input;
   curInput = input;
   curTime = time;
+  prevTime = curTime;
+  dState = target - curInput;
+  prevOutput = 0.0;
+  output = 0.0;
+  iOut = 0.0;
+  dOut = 0.0;
 }
 
 
@@ -47,20 +75,17 @@ void OffbPID::updateInput(double input, double time) {
 }
 
 void OffbPID::updateOutput() {
-  if ( (output < maxOutput || curErr*i < 0) &&
-       (output > minOutput || curErr*i > 0) )
-  {
+  if ((output < maxOutput || curErr*i < 0) &&
+      (output > minOutput || curErr*i > 0)) {
     integrate();
   }
 
   prevOutput = output;
-  output = fmax(
-      minOutput,
-      fmin(maxOutput, p * curErr + i * iOut + d * dOut + f * target + bias)
-  );
-  double outputPRamp = prevOutput + (curTime - prevTime) * maxOutputRamp;
-  double outputNRamp = prevOutput + (prevTime - curTime) * maxOutputRamp;
-  output = fmax( outputNRamp, fmin(outputPRamp, output) );
+  output = fmax(minOutput,
+    fmin(maxOutput, p * curErr + i * iOut + d * dOut + f * target + bias));
+  outputPRamp = prevOutput + (curTime - prevTime) * maxOutputRamp;
+  outputNRamp = prevOutput + (prevTime - curTime) * maxOutputRamp;
+  output = fmax(outputNRamp, fmin(outputPRamp, output));
 }
 
 
@@ -71,6 +96,6 @@ void OffbPID::integrate() {
 
 void OffbPID::derivative() {
   dOut = dFilterGain / dTimeConst * (curErr - dState);
-  double Ts = curTime - prevTime;
+  Ts = curTime - prevTime;
   dState = (1.0 - Ts / dTimeConst) * dState + Ts / dTimeConst * curErr;
 }

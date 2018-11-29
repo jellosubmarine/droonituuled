@@ -17,6 +17,7 @@ int OffbController::init() {
   #endif
 
   // Load ros parameters
+  readParam("manual_testing", &rp_man_testing, 0);
   readParam("limit/abort/altitude", &rp_lim_abort_alt, 2.0f);
   readParam("limit/abort/lost_time", &rp_lim_abort_lost_time, 10.0f);
   readParam("limit/nav/alt_margin", &rp_lim_nav_alt, 0.3f);
@@ -140,8 +141,12 @@ void OffbController::prepStandby() {
 // Preps the drone and controller for flight
 int OffbController::prepFlight() {
     if (!setMode("STABILIZE")) return 0;     // Enter stabilize mode
-    // if (!waitForArm()) return 0;             // Arm vehice
-    ROS_INFO("WARNING --- NOT WAITING FOR ARM --- DANGEROUS");
+    if (!rp_man_testing) {
+      if (!waitForArm())
+        return 0;             // Arm vehice
+    } else {
+      ROS_INFO("Skipping ARM status");
+    }
     if (!setMode("GUIDED_NOGPS")) return 0;  // Set guided_nogps mode
     zeroAltitude();
     return 1;
@@ -151,19 +156,19 @@ int OffbController::prepFlight() {
 /** CALLBACKS **/
 
 // State update
-void OffbController::stateCB (const mavros_msgs::State::ConstPtr& msg) {
-  	currentState = *msg;
+void OffbController::stateCB(const mavros_msgs::State::ConstPtr& msg) {
+  currentState = *msg;
 }
 
-void OffbController::vfrCB (const mavros_msgs::VFR_HUD::ConstPtr& msg) {
+void OffbController::vfrCB(const mavros_msgs::VFR_HUD::ConstPtr& msg) {
   flightData = *msg;
 }
 
-void OffbController::imuCB (const sensor_msgs::Imu::ConstPtr& msg) {
+void OffbController::imuCB(const sensor_msgs::Imu::ConstPtr& msg) {
   imuData = *msg;
 }
 
-void OffbController::camCB (const mavros_msgs::PositionTarget::ConstPtr& msg) {
+void OffbController::camCB(const mavros_msgs::PositionTarget::ConstPtr& msg) {
   camData = *msg;
 }
 

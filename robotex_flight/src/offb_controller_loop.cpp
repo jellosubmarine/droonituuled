@@ -29,7 +29,7 @@ void OffbController::debug(double w, double x, double y, double z) {
 // Main flight loop
 void OffbController::loop() {
   #ifdef OFFB_VERBOSE
-    ROS_INFO("Starting flight loop");
+    ROS_INFO("Offb loop");
   #endif
 
   mavros_msgs::AttitudeTarget rawAtt;
@@ -51,18 +51,21 @@ void OffbController::loop() {
   ros::Rate loopRate(OFFB_FLIGHT_LOOP_RATE);
   ros::Time t = ros::Time::now();
   double tsec = t.toSec();
-  double lostTime = -1;  // Time when nav got lost
+  double lostTime = tsec;  // Time when nav got lost
 
   ros::spinOnce();
-  altPID.initFirstInput(flightData.altitude - zeroAlt, tsec);
+  relAlt = flightData.altitude - zeroAlt;
+  altPID.initFirstInput(relAlt, tsec);
 
-  int flightStatus =
-    (flightData.altitude - zeroAlt >= OFFB_MIN_FLIGHT_ALT) *
-    FLIGHT_STATUS_FLYING;
+  int flightStatus = FLIGHT_STATUS_LOST |
+    ((relAlt >= OFFB_MIN_FLIGHT_ALT) * FLIGHT_STATUS_FLYING);
 
 
   ROS_INFO("Starting flight loop");
-  while (!g_flight_exit && !ros::isShuttingDown() && currentState.mode != "LAND") {
+  while (!g_flight_exit && !ros::isShuttingDown() &&
+         currentState.mode != "LAND" &&
+         (rp_man_testing || currentState.armed)) {
+    ros::spinOnce();
     t = ros::Time::now();
     tsec = t.toSec();
     relAlt = flightData.altitude - zeroAlt;
@@ -76,8 +79,7 @@ void OffbController::loop() {
 
     // Check lost time
     if (GET_BIT(flightStatus, FLIGHT_STATUS_LOST) &&
-        (tsec - lostTime > rp_lim_abort_lost_time))
-    {
+        (tsec - lostTime > rp_lim_abort_lost_time)) {
       ROS_INFO("Exceeded ABORT LOST TIME");
       SET_BIT(flightStatus, FLIGHT_STATUS_LAND);
     }
@@ -90,12 +92,12 @@ void OffbController::loop() {
 
 
     // Always maintain altitude
-    altPID.update(flightData.altitude - zeroAlt, tsec);
+    altPID.update(relAlt, tsec);
     rawAtt.thrust = altPID.output;
 
 
     // Drone on ground
-    if (! GET_BIT(flightStatus, FLIGHT_STATUS_FLYING)) {
+    if (!GET_BIT(flightStatus, FLIGHT_STATUS_FLYING)) {
       rawAtt.body_rate.z = 0.0;
       rawAtt.orientation.w = 1.0;
       rawAtt.orientation.x = 0.0;
@@ -105,6 +107,7 @@ void OffbController::loop() {
       if (relAlt >= OFFB_MIN_FLIGHT_ALT) {
         ROS_INFO("Airborne");
         SET_BIT(flightStatus, FLIGHT_STATUS_FLYING);
+        lostTime = tsec;
       }
     }
 
@@ -117,27 +120,26 @@ void OffbController::loop() {
         ROS_INFO("Set LOST status");
         SET_BIT(flightStatus, FLIGHT_STATUS_LOST);
         CLEAR_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
-        lostTime = ros::Time::now().toSec();
+        lostTime = tsec;
       }
 
 
       // IF LOST
       if (GET_BIT(flightStatus, FLIGHT_STATUS_LOST)) {
-        // Look for any lines unless we're taking off
-        if (fabs(flightData.climb) < rp_lim_nav_vs)
+        // Look for any lines and stabilise
+        // unless we're taking off
+        if (fabs(flightData.climb) < rp_lim_nav_vs) {
           rawAtt.body_rate.z = rp_lost_yaw_rate;
-        else
+          pitchPID.update(pitchPID.target, camData.velocity.y, tsec);
+          rollPID.update(rollPID.target, camData.velocity.x, tsec);
+        } else {
+          // Otherwise do nothing
           rawAtt.body_rate.z = 0.0;
-
-        // TODO(johan):
-        // Stabilise using OF velocity
-        // Set input to target to cancel any targeted movement
-
-        // Don't attempt to control movement
-        rawAtt.orientation.w = 1.0;
-        rawAtt.orientation.x = 0.0;
-        rawAtt.orientation.y = 0.0;
-        rawAtt.orientation.z = 0.0;
+          rawAtt.orientation.w = 1.0;
+          rawAtt.orientation.x = 0.0;
+          rawAtt.orientation.y = 0.0;
+          rawAtt.orientation.z = 0.0;
+        }
 
         if (camData.position.z) {
           ROS_INFO("Cleared LOST status");
@@ -187,12 +189,11 @@ void OffbController::loop() {
           // Check if ready to navigate
           if (relAlt > rp_pid_alt_target - rp_lim_nav_alt &&
               relAlt < rp_pid_alt_target + rp_lim_nav_alt &&
-              fabs(flightData.climb) < rp_lim_nav_vs )
-          {
+              fabs(flightData.climb) < rp_lim_nav_vs ) {
             ROS_INFO("Starting navigation");
             SET_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
-            pitchPID.initFirstInput(camData.position.y, tsec);
-            rollPID.initFirstInput(camData.position.x, tsec);
+            pitchPID.initFirstInput(floorPoint.y, tsec);
+            rollPID.initFirstInput(floorPoint.x, tsec);
           }
         }  // Navigate
       }  // lost
@@ -201,14 +202,16 @@ void OffbController::loop() {
 
     rawAtt.header.stamp = t;
     raw_pub.publish(rawAtt);
-    debug(rollPID.output, pitchPID.output, yawPID.output, 0.0f);
+    // debug(0.0, roll*180.0/M_PI, pitch*180.0/M_PI, yaw*180.0/M_PI);
+    // debug(floorPoint.y, camData.position.x, camData.position.y, floorPoint.x);
+    // debug(rollPID.output, rollPID.iOut, rollPID.dOut, rollPID.dState);
+    debug(0.0, rollPID.output*180.0/M_PI, pitchPID.output*180.0/M_PI, 0.0);
 
     #ifdef OFFB_SHOW_VISUALS
       updateVisuals(floorPoint.x, floorPoint.y, camData.yaw);
     #endif
 
     loopRate.sleep();
-    ros::spinOnce();
   }
 
   ROS_INFO("Flight loop finished");

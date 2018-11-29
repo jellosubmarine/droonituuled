@@ -11,7 +11,7 @@ frame:
 
 contour:
   rect:
-    min_size:      2000
+    min_size:      200000
     max_size:      6000
     min_ratio:      2.5
     max_ratio:      5.0

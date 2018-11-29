@@ -3,6 +3,7 @@
 
 class OffbPID {
 public:
+  OffbPID();
   void update(double input, double vel, double time);
   void update(double input, double time);
   void initFirstInput(double input, double time);
@@ -27,26 +28,27 @@ public:
   double bias;
 
   // Controller output
-  double prevOutput;
   double output;
-
-//private:
-  void integrate();
-  void derivative();
-  void updateInput(double input, double time);
-  void updateOutput();
 
   // Persistent states for integral and derivative
   double iOut;
   double dOut;
   double dState;
 
+private:
+  void integrate();
+  void derivative();
+  void updateInput(double input, double time);
+  void updateOutput();
+
+
+
   // Controller persistent states
   double curInput;
-  double curTime;
-  double prevTime;
-  double curErr;
-  double prevErr;
+  double curTime, prevTime, Ts;
+  double curErr, prevErr;
+  double prevOutput;
+  double outputPRamp, outputNRamp;
 };
 
 #endif

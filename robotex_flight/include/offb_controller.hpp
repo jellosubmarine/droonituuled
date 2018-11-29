@@ -74,6 +74,7 @@ private:
   bool timeout;
 
   // Ros parameters
+  int rp_man_testing;
   float rp_lim_nav_alt, rp_lim_nav_vs;
   float rp_lim_abort_alt, rp_lim_abort_lost_time;
   float rp_pid_alt_target;

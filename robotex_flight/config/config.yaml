@@ -1,5 +1,8 @@
 #Parameters for the flight node
 
+# Disables ARM requirement
+manual_testing: 0
+
 # All kinds of limits
 limit:
   nav:
