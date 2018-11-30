@@ -31,9 +31,7 @@ public:
   double output;
 
   // Persistent states for integral and derivative
-  double iOut;
-  double dOut;
-  double dState;
+  double iOut, dOut, dState;
 
 private:
   void integrate();
