@@ -64,6 +64,7 @@ private:
   OffbPID pitchPID;
   OffbPID rollPID;
   OffbPID yawPID;
+  float lostYawDir;
 
   // Data storage
   mavros_msgs::State currentState;

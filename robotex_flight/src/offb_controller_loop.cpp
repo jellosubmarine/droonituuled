@@ -52,6 +52,7 @@ void OffbController::loop() {
   ros::Time t = ros::Time::now();
   double tsec = t.toSec();
   double lostTime = tsec;  // Time when nav got lost
+  lostYawDir = 1.0;
 
   ros::spinOnce();
   relAlt = flightData.altitude - zeroAlt;
@@ -129,7 +130,7 @@ void OffbController::loop() {
         // Look for any lines and stabilise
         // unless we're taking off
         if (fabs(flightData.climb) < rp_lim_nav_vs) {
-          rawAtt.body_rate.z = rp_lost_yaw_rate;
+          rawAtt.body_rate.z = rp_lost_yaw_rate * lostYawDir;
           pitchPID.update(pitchPID.target, camData.velocity.y, tsec);
           rollPID.update(rollPID.target, camData.velocity.x, tsec);
         } else {
@@ -161,6 +162,7 @@ void OffbController::loop() {
           camData.position.x, camData.position.y, flightData.altitude,
           OFFB_CAM_ANGLE - pitch, OFFB_CAM_FOV_X, OFFB_CAM_FOV_Y,
           &floorPoint);
+        lostYawDir = SGNF(floorPoint.x);
 
         // Navigate
         if (GET_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE)) {
@@ -172,8 +174,7 @@ void OffbController::loop() {
           // Check for altitude outside margins
           if (relAlt < rp_pid_alt_target - rp_lim_nav_alt ||
               relAlt > rp_pid_alt_target + rp_lim_nav_alt ||
-              fabs(flightData.climb) > rp_lim_nav_vs )
-          {
+              fabs(flightData.climb) > rp_lim_nav_vs ) {
             ROS_INFO("Altitude unstable. Stopped navigation.");
             CLEAR_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE);
           }

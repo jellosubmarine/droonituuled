@@ -59,5 +59,6 @@
 #define SET_BIT(a, b)     ((a) |= (b))
 #define CLEAR_BIT(a, b)   ((a) &= (~(b)))
 #define GET_BIT(a, b)     (((a) & (b)) > 0)
-
+#define SGNI(x)           ((0 < (x)) - ((x) < 0))
+#define SGNF(x)           ((0.0f < (x)) - ((x) < 0.0f))
 #endif
