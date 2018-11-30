@@ -1,0 +1,1 @@
+rsync -avuPh --exclude-from="rsync_exclude" odroid@odroid:/home/odroid/catkin_ws/src/droonituuled/ /home/madis/jello-ros/src/droonituuled/
