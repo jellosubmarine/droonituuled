@@ -11,9 +11,9 @@
 
 
 #ifdef DT_BUILD_DEV
-#pragma message "robotex_cam dev build"
-#else
-#pragma message "robotex_cam live build"
+  #pragma message "robotex_cam dev build"
+// #else
+//   #pragma message "robotex_cam live build"
 #endif
 
 

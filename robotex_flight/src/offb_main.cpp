@@ -15,8 +15,8 @@
 
 #ifdef DT_BUILD_DEV
   #pragma message "robotex_flight dev build"
-#else
-  #pragma message "robotex_flight live build"
+// #else
+//   #pragma message "robotex_flight live build"
 #endif
 
 

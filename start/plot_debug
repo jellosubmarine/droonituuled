@@ -1,1 +1,1 @@
-rqt_plot -e /mavros/vfr_hud/altitude /dt/debug /mavros/imu/data
+rqt_plot -e /mavros/vfr_hud/altitude /dt/debug
