@@ -10,8 +10,8 @@ project(robotex_flight)
 find_package( catkin REQUIRED COMPONENTS
   geometry_msgs
   mavros_msgs
-	std_msgs
-	roscpp
+  std_msgs
+  roscpp
   rospy
   cv_bridge
 )
@@ -121,10 +121,10 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-	include
-	../common
+  include
+  ../common
   ${catkin_INCLUDE_DIRS}
-	${OpenCV_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -141,13 +141,14 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable( ${PROJECT_NAME}_main
-	src/offb_main.cpp
-	src/offb_controller.cpp
-	src/offb_controller_loop.cpp
-	src/offb_controller_loop_simple.cpp
-	src/offb_controller_visuals.cpp
-	src/offb_pid.cpp
-	src/offb_math.cpp
+  src/offb_main.cpp
+  src/offb_controller.cpp
+  src/offb_controller_loop.cpp
+  src/offb_controller_loop_simple.cpp
+  src/offb_controller_visuals.cpp
+  src/offb_pid.cpp
+  src/offb_filter.cpp
+  src/offb_math.cpp
 )
 
 #add_executable(offb_node src/offb_node.cpp)
@@ -165,8 +166,8 @@ add_executable( ${PROJECT_NAME}_main
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries( ${PROJECT_NAME}_main
-	${catkin_LIBRARIES}
-	${OpenCV_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
 )
 
 #target_link_libraries(offb_node ${catkin_LIBRARIES})
