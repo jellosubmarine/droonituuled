@@ -1,8 +1,10 @@
 #Parameters for the camera node
 
+loop_rate: 25
+
 # Optical flow
 of:
-  refresh_interval: 8  # frames
+  refresh_interval: 10  # frames
 
 
 frame:

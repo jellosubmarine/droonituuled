@@ -17,7 +17,7 @@
   #endif
 #endif
 
-#define CAM_LOOP_RATE          DT_LOOP_RATE  // Hz
+// #define CAM_LOOP_RATE          DT_LOOP_RATE  // Hz
 
 #define CAM_FRAME_WIDTH        640
 #define CAM_FRAME_HEIGHT       480
@@ -67,6 +67,7 @@ private:
   int rp_rect_min_size, rp_rect_max_size;
   float rp_rect_min_ratio, rp_rect_max_ratio;
   float rp_rect_max_angle;
+  int rp_loop_rate;
 
   // Frame storage
   bool image_flag;

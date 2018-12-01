@@ -15,6 +15,7 @@
 #include "dt_config.hpp"
 #include "offb_controller.hpp"
 #include "offb_pid.hpp"
+#include "offb_filter.hpp"
 
 extern volatile int g_flight_exit;
 
@@ -64,6 +65,10 @@ private:
   OffbPID pitchPID;
   OffbPID rollPID;
   OffbPID yawPID;
+  OffbPID ofPitchPID;
+  OffbPID ofRollPID;
+  OffbFilter ofPitchFilter;
+  OffbFilter ofRollFilter;
   float lostYawDir;
 
   // Data storage
@@ -75,6 +80,7 @@ private:
   bool timeout;
 
   // Ros parameters
+  int rp_loop_rate;
   int rp_man_testing;
   float rp_lim_nav_alt, rp_lim_nav_vs;
   float rp_lim_abort_alt, rp_lim_abort_lost_time;
@@ -82,6 +88,14 @@ private:
   float rp_pid_alt_out_min, rp_pid_alt_out_max;
   float rp_pid_alt_out_ramp, rp_pid_alt_out_bias;
   float rp_pid_alt_p, rp_pid_alt_i, rp_pid_alt_d;
+  float rp_pid_of_pitch_target;
+  float rp_pid_of_pitch_out_min, rp_pid_of_pitch_out_max, rp_pid_of_pitch_out_ramp;
+  float rp_pid_of_pitch_p, rp_pid_of_pitch_d;
+  float rp_of_pitch_ftconst;
+  float rp_pid_of_roll_target;
+  float rp_pid_of_roll_out_min, rp_pid_of_roll_out_max, rp_pid_of_roll_out_ramp;
+  float rp_pid_of_roll_p, rp_pid_of_roll_d;
+  float rp_of_roll_ftconst;
   float rp_pid_pitch_target;
   float rp_pid_pitch_out_min, rp_pid_pitch_out_max, rp_pid_pitch_out_ramp;
   float rp_pid_pitch_p, rp_pid_pitch_d;

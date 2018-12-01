@@ -41,14 +41,17 @@ void OffbController::loop() {
 
   geometry_msgs::Point floorPoint;
   double yaw = 0.0, pitch = 0.0, roll = 0.0;
+  double pitchOut = 0.0, rollOut = 0.0;
   double relAlt = 0.0;
 
   altPID.target = rp_pid_alt_target;
   pitchPID.target = rp_pid_pitch_target;
   rollPID.target = rp_pid_roll_target;
   yawPID.target = rp_pid_yaw_target;
+  ofPitchPID.target = rp_pid_of_pitch_target;
+  ofRollPID.target = rp_pid_of_roll_target;
 
-  ros::Rate loopRate(OFFB_FLIGHT_LOOP_RATE);
+  ros::Rate loopRate(rp_loop_rate);
   ros::Time t = ros::Time::now();
   double tsec = t.toSec();
   double lostTime = tsec;  // Time when nav got lost
@@ -70,7 +73,8 @@ void OffbController::loop() {
     t = ros::Time::now();
     tsec = t.toSec();
     relAlt = flightData.altitude - zeroAlt;
-
+    pitchOut = 0.0;
+    rollOut = 0.0;
 
     // Check abort altitude
     if (relAlt > rp_lim_abort_alt) {
@@ -108,6 +112,10 @@ void OffbController::loop() {
       if (relAlt >= OFFB_MIN_FLIGHT_ALT) {
         ROS_INFO("Airborne");
         SET_BIT(flightStatus, FLIGHT_STATUS_FLYING);
+        ofPitchFilter.initFirstInput(camData.velocity.y, tsec);
+        ofPitchPID.initFirstInput(ofPitchFilter.output, tsec);
+        ofRollFilter.initFirstInput(camData.velocity.x, tsec);
+        ofRollPID.initFirstInput(ofRollFilter.output, tsec);
         lostTime = tsec;
       }
     }
@@ -124,22 +132,29 @@ void OffbController::loop() {
         lostTime = tsec;
       }
 
+      // TODO(johan): Combine redundant if statements
+      // If not climing, do optical stabilisation
+      if (fabs(flightData.climb) < rp_lim_nav_vs) {
+        ofPitchPID.update(ofPitchFilter.filter(camData.velocity.y, tsec), tsec);
+        ofRollPID.update(ofRollFilter.filter(camData.velocity.x, tsec), tsec);
+        pitchOut += ofPitchPID.output;
+        rollOut += ofRollPID.output;
+      }
 
       // IF LOST
       if (GET_BIT(flightStatus, FLIGHT_STATUS_LOST)) {
-        // Look for any lines and stabilise
-        // unless we're taking off
         if (fabs(flightData.climb) < rp_lim_nav_vs) {
+          // Look for any lines unless we're taking off
           rawAtt.body_rate.z = rp_lost_yaw_rate * lostYawDir;
-          pitchPID.update(pitchPID.target, camData.velocity.y, tsec);
-          rollPID.update(rollPID.target, camData.velocity.x, tsec);
         } else {
           // Otherwise do nothing
           rawAtt.body_rate.z = 0.0;
-          rawAtt.orientation.w = 1.0;
-          rawAtt.orientation.x = 0.0;
-          rawAtt.orientation.y = 0.0;
-          rawAtt.orientation.z = 0.0;
+          // rawAtt.orientation.w = 1.0;
+          // rawAtt.orientation.x = 0.0;
+          // rawAtt.orientation.y = 0.0;
+          // rawAtt.orientation.z = 0.0;
+          pitchOut = 0.0;
+          rollOut = 0.0;
         }
 
         if (camData.position.z) {
@@ -166,10 +181,10 @@ void OffbController::loop() {
 
         // Navigate
         if (GET_BIT(flightStatus, FLIGHT_STATUS_NAVIGATE)) {
-          pitchPID.update(floorPoint.y, camData.velocity.y, tsec);
-          rollPID.update(floorPoint.x, camData.velocity.x, tsec);
-          offb_euler2quat(rollPID.output + rawAtt.body_rate.z * rp_roll_yaw_coupling,
-                          pitchPID.output, 0.0, &(rawAtt.orientation));
+          pitchPID.update(floorPoint.y, ofPitchFilter.output, tsec);
+          rollPID.update(floorPoint.x, ofRollFilter.output, tsec);
+          pitchOut += pitchPID.output;
+          rollOut += rollPID.output + rawAtt.body_rate.z * rp_roll_yaw_coupling;
 
           // Check for altitude outside margins
           if (relAlt < rp_pid_alt_target - rp_lim_nav_alt ||
@@ -182,11 +197,6 @@ void OffbController::loop() {
 
         // Not safe to navigate (due to altitude)
         else {
-          rawAtt.orientation.w = 1.0;
-          rawAtt.orientation.x = 0.0;
-          rawAtt.orientation.y = 0.0;
-          rawAtt.orientation.z = 0.0;
-
           // Check if ready to navigate
           if (relAlt > rp_pid_alt_target - rp_lim_nav_alt &&
               relAlt < rp_pid_alt_target + rp_lim_nav_alt &&
@@ -200,14 +210,14 @@ void OffbController::loop() {
       }  // lost
     }  // airborne
 
-
+    offb_euler2quat(rollOut, pitchOut, 0.0, &(rawAtt.orientation));
     rawAtt.header.stamp = t;
     raw_pub.publish(rawAtt);
     // debug(0.0, roll*180.0/M_PI, pitch*180.0/M_PI, yaw*180.0/M_PI);
     // debug(floorPoint.y, camData.position.x, camData.position.y, floorPoint.x);
     // debug(rollPID.output, rollPID.iOut, rollPID.dOut, rollPID.dState);
-    debug(0.0, rollPID.output*180.0/M_PI, pitchPID.output*180.0/M_PI, 0.0);
-
+    // debug(0.0, rollOut*180.0/M_PI, pitchOut*180.0/M_PI, 0.0);
+    debug(ofPitchFilter.output, camData.velocity.x, camData.velocity.y, ofRollFilter.output);
     #ifdef OFFB_SHOW_VISUALS
       updateVisuals(floorPoint.x, floorPoint.y, camData.yaw);
     #endif

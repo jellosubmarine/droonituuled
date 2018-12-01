@@ -11,7 +11,7 @@
 #endif
 
 
-#define OFFB_FLIGHT_LOOP_RATE   DT_LOOP_RATE    // Hz
+// #define OFFB_FLIGHT_LOOP_RATE   DT_LOOP_RATE    // Hz
 #define OFFB_START_LOOP_RATE    3    // Hz
 #define OFFB_ARM_TIMEOUT       10    // sec
 #define OFFB_GEN_TIMEOUT        5    // sec

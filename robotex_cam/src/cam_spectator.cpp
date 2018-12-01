@@ -30,6 +30,7 @@ Visuals::Visuals(ros::NodeHandle &nh) : it(nh) {
   image_flag = false;
 
   // Read parameters (third argument is default value, if unable to fetch parameter)
+  readParam(nh, "loop_rate", &rp_loop_rate, 10);
   readParam(nh, "of/refresh_interval", &rp_of_refresh_int, 15);
   readParam(nh, "frame/mask/saturation_thr", &rp_mask_sat_thr, 50);
   readParam(nh, "contour/rect/min_size", &rp_rect_min_size, 1000);
@@ -60,7 +61,7 @@ void Visuals::readParam(const ros::NodeHandle& nh, const std::string& param_name
 
 /* SETUP AND START */
 void Visuals::run() {
-  ros::Rate rate(CAM_LOOP_RATE);
+  ros::Rate rate(rp_loop_rate);
 
   // Wait for first frame to arrive
   while (ros::ok() && !image_flag) {

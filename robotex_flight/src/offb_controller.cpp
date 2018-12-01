@@ -17,6 +17,7 @@ int OffbController::init() {
   #endif
 
   // Load ros parameters
+  readParam("loop_rate", &rp_loop_rate, 10);
   readParam("manual_testing", &rp_man_testing, 0);
   readParam("limit/abort/altitude", &rp_lim_abort_alt, 2.0f);
   readParam("limit/abort/lost_time", &rp_lim_abort_lost_time, 10.0f);
@@ -30,6 +31,20 @@ int OffbController::init() {
   readParam("pid/altitude/p", &rp_pid_alt_p, 0.0f);
   readParam("pid/altitude/i", &rp_pid_alt_i, 0.0f);
   readParam("pid/altitude/d", &rp_pid_alt_d, 0.0f);
+  readParam("pid/of_pitch/target", &rp_pid_of_pitch_target, 1.0f);
+  readParam("pid/of_pitch/output/min", &rp_pid_of_pitch_out_min, -1.0f);
+  readParam("pid/of_pitch/output/max", &rp_pid_of_pitch_out_max, +1.0f);
+  readParam("pid/of_pitch/output/ramp", &rp_pid_of_pitch_out_ramp, 1.0f);
+  readParam("pid/of_pitch/p", &rp_pid_of_pitch_p, 0.0f);
+  readParam("pid/of_pitch/d", &rp_pid_of_pitch_d, 0.0f);
+  readParam("pid/of_pitch/filter_tconst", &rp_of_pitch_ftconst, 1.0f);
+  readParam("pid/of_roll/target", &rp_pid_of_roll_target, 1.0f);
+  readParam("pid/of_roll/output/min", &rp_pid_of_roll_out_min, -1.0f);
+  readParam("pid/of_roll/output/max", &rp_pid_of_roll_out_max, +1.0f);
+  readParam("pid/of_roll/output/ramp", &rp_pid_of_roll_out_ramp, 1.0f);
+  readParam("pid/of_roll/p", &rp_pid_of_roll_p, 0.0f);
+  readParam("pid/of_roll/d", &rp_pid_of_roll_d, 0.0f);
+  readParam("pid/of_roll/filter_tconst", &rp_of_roll_ftconst, 1.0f);
   readParam("pid/pitch/target", &rp_pid_pitch_target, 1.0f);
   readParam("pid/pitch/output/min", &rp_pid_pitch_out_min, -1.0f);
   readParam("pid/pitch/output/max", &rp_pid_pitch_out_max, +1.0f);
@@ -97,6 +112,20 @@ int OffbController::init() {
     rp_pid_yaw_out_max, rp_pid_yaw_out_min,
     rp_pid_yaw_out_ramp);
 
+  ofRollPID.conf(
+    rp_pid_of_roll_p, OFFB_PID_ROLL_I, rp_pid_of_roll_d, OFFB_PID_ROLL_F,
+    OFFB_PID_ROLL_DTC, OFFB_PID_ROLL_DK, OFFB_PID_ROLL_BIAS,
+    rp_pid_of_roll_out_max, rp_pid_of_roll_out_min,
+    rp_pid_of_roll_out_ramp);
+
+  ofPitchPID.conf(
+    rp_pid_of_pitch_p, OFFB_PID_PITCH_I, rp_pid_of_pitch_d, OFFB_PID_PITCH_F,
+    OFFB_PID_PITCH_DTC, OFFB_PID_PITCH_DK, OFFB_PID_PITCH_BIAS,
+    rp_pid_of_pitch_out_max, rp_pid_of_pitch_out_min,
+    rp_pid_of_pitch_out_ramp);
+
+  ofRollFilter.conf(rp_of_roll_ftconst);
+  ofPitchFilter.conf(rp_of_pitch_ftconst);
 
   // Init visuals
   #ifdef OFFB_SHOW_VISUALS
