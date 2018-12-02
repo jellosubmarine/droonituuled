@@ -9,6 +9,7 @@
 #include "sensor_msgs/Imu.h"
 #include "geometry_msgs/Quaternion.h"
 #include "geometry_msgs/PointStamped.h"
+#include "mavros_msgs/AttitudeTarget.h"
 #include "mavros_msgs/PositionTarget.h"
 #include "opencv2/core.hpp"
 
@@ -76,6 +77,7 @@ private:
   mavros_msgs::VFR_HUD flightData;
   mavros_msgs::PositionTarget camData;
   sensor_msgs::Imu imuData;
+  mavros_msgs::AttitudeTarget rawAtt;
   double zeroAlt;
   bool timeout;
 

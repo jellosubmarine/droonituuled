@@ -32,7 +32,7 @@ void OffbController::loop() {
     ROS_INFO("Offb loop");
   #endif
 
-  mavros_msgs::AttitudeTarget rawAtt;
+  // Init controller loop parameters
   rawAtt.body_rate.x = 0.0f;
   rawAtt.body_rate.y = 0.0f;
   rawAtt.type_mask = rawAtt.IGNORE_ROLL_RATE |
@@ -57,6 +57,7 @@ void OffbController::loop() {
   double lostTime = tsec;  // Time when nav got lost
   lostYawDir = 1.0;
 
+  // Update all callbacks
   ros::spinOnce();
   relAlt = flightData.altitude - zeroAlt;
   altPID.initFirstInput(relAlt, tsec);
@@ -65,6 +66,7 @@ void OffbController::loop() {
     ((relAlt >= OFFB_MIN_FLIGHT_ALT) * FLIGHT_STATUS_FLYING);
 
 
+  // Main flight loop
   ROS_INFO("Starting flight loop");
   while (!g_flight_exit && !ros::isShuttingDown() &&
          currentState.mode != "LAND" &&
@@ -149,14 +151,11 @@ void OffbController::loop() {
         } else {
           // Otherwise do nothing
           rawAtt.body_rate.z = 0.0;
-          // rawAtt.orientation.w = 1.0;
-          // rawAtt.orientation.x = 0.0;
-          // rawAtt.orientation.y = 0.0;
-          // rawAtt.orientation.z = 0.0;
           pitchOut = 0.0;
           rollOut = 0.0;
         }
 
+        // Check if drone has regained visuals
         if (camData.position.z) {
           ROS_INFO("Cleared LOST status");
           CLEAR_BIT(flightStatus, FLIGHT_STATUS_LOST);
@@ -210,9 +209,11 @@ void OffbController::loop() {
       }  // lost
     }  // airborne
 
+   // Output and debug
     offb_euler2quat(rollOut, pitchOut, 0.0, &(rawAtt.orientation));
     rawAtt.header.stamp = t;
     raw_pub.publish(rawAtt);
+
     // debug(0.0, roll*180.0/M_PI, pitch*180.0/M_PI, yaw*180.0/M_PI);
     // debug(floorPoint.y, camData.position.x, camData.position.y, floorPoint.x);
     // debug(rollPID.output, rollPID.iOut, rollPID.dOut, rollPID.dState);
