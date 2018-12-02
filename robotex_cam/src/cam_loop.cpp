@@ -134,12 +134,12 @@ void Visuals::process() {
     if (centroids.size() > 1) {
       bottom_centroid.x = convertXCoord(centroids[0].x);
       bottom_centroid.y = convertYCoord(centroids[0].y);
+      hdg = hdgFromBottomPoint();
     } else {
       bottom_centroid.x = 0.0;
       bottom_centroid.y = -CAM_FRAME_OFFSET_Y;
+      hdg = contour_rects[0].angle * M_PI / 180.0;
     }
-
-    hdg = hdgFromBottomPoint();
   } else {
     mean_centroid.x = 0.0;
     mean_centroid.y = 0.0;

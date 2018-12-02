@@ -1,6 +1,6 @@
 #Parameters for the flight node
 
-loop_rate: 25
+loop_rate: 18
 
 # Disables ARM requirement
 manual_testing: 0
@@ -33,45 +33,47 @@ pid:
   of_pitch:
     target: 0.0   # Metres ahead
     output:
-      min:  deg(-30) # Degrees backwards
-      max:  deg(+30) # Degrees forward
+      min:  deg(-10) # Degrees backwards
+      max:  deg(+10) # Degrees forward
       ramp: deg(40)  # Degrees / sec
-    p:     -0.09     # neg accel fwd / 9.81
+    p:     -0.08     # neg accel fwd / 9.81
     d:     -0.00     # accel fwd / 9.81
 
-    filter_tconst: 0.1
+    filter_tconst: 0.11
 
   # Input metres right, output roll right in radians
   of_roll:
     target: 0.0   # Metres right
     output:
-      min:  deg(-30) # Degrees left
-      max:  deg(+30) # Degrees right
+      min:  deg(-10) # Degrees left
+      max:  deg(+10) # Degrees right
       ramp: deg(40)  # Degrees / sec
-    p:     -0.09     # neg accel right / 9.81
+    p:     -0.10     # neg accel right / 9.81
     d:     -0.00     # accel right / 9.81
     
-    filter_tconst: 0.1
+    filter_tconst: 0.06
     
     
   # Input metres ahead, output pitch forward in radians
   pitch:
     target: 0.2   # Metres ahead
     output:
-      min:  deg(-5) # Degrees backwards
-      max:  deg(+5) # Degrees forward
-      ramp: deg(40)  # Degrees / sec
-    p:     -0.07     # neg accel fwd / 9.81
+      min:  deg(-4) # Degrees backwards
+      max:  deg(+4) # Degrees forward
+      ramp: deg(20)  # Degrees / sec
+      bias: deg(0.0) # Degrees forward
+    p:     -0.10     # neg accel fwd / 9.81
     d:      0.00     # accel fwd / 9.81
 
   # Input metres right, output roll right in radians
   roll:
     target: 0.0   # Metres right
     output:
-      min:  deg(-5) # Degrees left
-      max:  deg(+5) # Degrees right
-      ramp: deg(40)  # Degrees / sec
-    p:     -0.06     # neg accel right / 9.81
+      min:  deg(-4) # Degrees left
+      max:  deg(+4) # Degrees right
+      ramp: deg(20)  # Degrees / sec
+      bias: deg(0.0) # Degrees right
+    p:     -0.10     # neg accel right / 9.81
     d:      0.00     # accel right / 9.81
 
   # Input radians right, output yaw rate right rad/s
@@ -81,10 +83,10 @@ pid:
       min:  deg(-30) # Degrees backwards
       max:  deg(+30) # Degrees forward
       ramp: deg(30)  # Degrees / sec
-    p:     -1.0      # neg accel right / 9.81
-    d:     -1.2      # accel right / 9.81
+    p:     -2.0      # neg accel right / 9.81
+    d:     -1.0      # accel right / 9.81
 
-  roll_yaw_coupling: 0.10
+  roll_yaw_coupling: 0.08
   lost_yaw_rate:     deg(30.0)
 
 # Pixhawk output stream

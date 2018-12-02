@@ -34,14 +34,14 @@
 #define OFFB_PID_ALT_DK               1.0
 
 // Pitch PID tuning, intput Y metres, output rad
-#define OFFB_PID_PITCH_BIAS              0.0  // output bias
+// #define OFFB_PID_PITCH_BIAS              0.0  // output bias
 #define OFFB_PID_PITCH_I                 0.0
 #define OFFB_PID_PITCH_F                 0.0
 #define OFFB_PID_PITCH_DTC               1.0
 #define OFFB_PID_PITCH_DK                1.0
 
 // Roll PID tuning, input X px, output rad
-#define OFFB_PID_ROLL_BIAS               0.0        // output bias
+// #define OFFB_PID_ROLL_BIAS               0.0        // output bias
 #define OFFB_PID_ROLL_I                  0.00
 #define OFFB_PID_ROLL_F                  0.0
 #define OFFB_PID_ROLL_DTC                1.0

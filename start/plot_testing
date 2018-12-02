@@ -1,0 +1,1 @@
+rqt_plot -e /dt/cam_topic/position /mavros/setpoint_raw/attitude/orientation /mavros/vfr_hud/altitude

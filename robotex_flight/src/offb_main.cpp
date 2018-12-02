@@ -62,9 +62,9 @@ int main(int argc, char **argv) {
   OffbController ctrl;
   ctrl.nh = nh;
 
-  #ifdef DT_BUILD_LIVE
-    ros::Duration(6, 0).sleep();
-  #endif
+//  #ifdef DT_BUILD_LIVE
+//    ros::Duration(6, 0).sleep();
+//  #endif
 
   signal(SIGINT, sigintHandler);
 

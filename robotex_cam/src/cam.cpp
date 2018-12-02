@@ -33,6 +33,9 @@ Visuals::Visuals(ros::NodeHandle &nh) : it(nh) {
   readParam(nh, "loop_rate", &rp_loop_rate, 10);
   readParam(nh, "of/refresh_interval", &rp_of_refresh_int, 15);
   readParam(nh, "frame/mask/saturation_thr", &rp_mask_sat_thr, 50);
+  readParam(nh, "frame/mask/mask_edges", &rp_mask_edges, 1);
+  readParam(nh, "frame/mask/unmasked_x", &rp_unmasked_x, 640);
+  readParam(nh, "frame/mask/unmasked_y", &rp_unmasked_y, 480);
   readParam(nh, "contour/rect/min_size", &rp_rect_min_size, 1000);
   readParam(nh, "contour/rect/max_size", &rp_rect_max_size, 4000);
   readParam(nh, "contour/rect/min_ratio", &rp_rect_min_ratio, 2.0f);
@@ -93,10 +96,16 @@ void Visuals::run() {
 
   // Create image mask
   edge_mask = cv::Mat::zeros(frame.size(), CV_8UC1);
-  cv::ellipse(edge_mask, cv::RotatedRect(
-    cv::Point2f((CAM_FRAME_WIDTH-1)/2.0f, (CAM_FRAME_HEIGHT-1)/2.0f),
-    cv::Size2f(CAM_FRAME_WIDTH, CAM_FRAME_HEIGHT), 0.0f),
-    cv::Scalar(255), -1, 8);
+  if (rp_mask_edges) {
+    cv::ellipse(edge_mask,
+      cv::RotatedRect(
+        cv::Point2f((CAM_FRAME_WIDTH-1)/2.0f, (CAM_FRAME_HEIGHT-1)/2.0f),
+        cv::Size2f(rp_unmasked_x, rp_unmasked_y), 0.0f),
+      cv::Scalar(255), -1, 8);
+  }
+  else {
+    edge_mask = edge_mask + cv::Scalar(255);
+  }
 
   #ifdef DT_BUILD_DEV
     mask3 = cv::Mat(frame.size(), CV_8UC3);

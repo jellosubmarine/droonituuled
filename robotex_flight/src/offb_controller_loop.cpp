@@ -112,10 +112,10 @@ void OffbController::loop() {
       if (relAlt >= OFFB_MIN_FLIGHT_ALT) {
         ROS_INFO("Airborne");
         SET_BIT(flightStatus, FLIGHT_STATUS_FLYING);
-        ofPitchFilter.initFirstInput(camData.velocity.y, tsec);
-        ofPitchPID.initFirstInput(ofPitchFilter.output, tsec);
-        ofRollFilter.initFirstInput(camData.velocity.x, tsec);
-        ofRollPID.initFirstInput(ofRollFilter.output, tsec);
+        ofPitchFilter.initFirstInput(0.0f, tsec);
+        ofPitchPID.initFirstInput(ofPitchFilter.filter(camData.velocity.y, tsec), tsec);
+        ofRollFilter.initFirstInput(0.0f, tsec);
+        ofRollPID.initFirstInput(ofRollFilter.filter(camData.velocity.x, tsec), tsec);
         lostTime = tsec;
       }
     }

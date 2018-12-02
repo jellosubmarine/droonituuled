@@ -93,11 +93,13 @@ private:
   float rp_pid_of_pitch_p, rp_pid_of_pitch_d;
   float rp_of_pitch_ftconst;
   float rp_pid_of_roll_target;
-  float rp_pid_of_roll_out_min, rp_pid_of_roll_out_max, rp_pid_of_roll_out_ramp;
+  float rp_pid_of_roll_out_min, rp_pid_of_roll_out_max;
+  float rp_pid_of_roll_out_ramp, rp_pid_roll_out_bias;
   float rp_pid_of_roll_p, rp_pid_of_roll_d;
   float rp_of_roll_ftconst;
   float rp_pid_pitch_target;
-  float rp_pid_pitch_out_min, rp_pid_pitch_out_max, rp_pid_pitch_out_ramp;
+  float rp_pid_pitch_out_min, rp_pid_pitch_out_max;
+  float rp_pid_pitch_out_ramp, rp_pid_pitch_out_bias;
   float rp_pid_pitch_p, rp_pid_pitch_d;
   float rp_pid_roll_target;
   float rp_pid_roll_out_min, rp_pid_roll_out_max, rp_pid_roll_out_ramp;

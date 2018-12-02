@@ -63,6 +63,7 @@ private:
   // Ros parameters
   template<typename T> void readParam(const ros::NodeHandle& nh, const std::string& param_name, T* var, const T& defaultVal);
   int rp_mask_sat_thr;
+  int rp_mask_edges, rp_unmasked_x, rp_unmasked_y;
   int rp_of_refresh_int;
   int rp_rect_min_size, rp_rect_max_size;
   float rp_rect_min_ratio, rp_rect_max_ratio;

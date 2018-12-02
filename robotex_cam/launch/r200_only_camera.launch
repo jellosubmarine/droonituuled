@@ -42,9 +42,9 @@
   <param name="$(arg camera)/driver/depth_fps"           type="int"    value="$(arg depth_fps)" />
   <param name="$(arg camera)/driver/color_fps"           type="int"    value="$(arg color_fps)" />
   <param name="$(arg camera)/driver/color_enable_auto_exposure"  type="int"  value="0" />
-  <param name="$(arg camera)/driver/color_exposure"      type="int"    value="40" />
+  <param name="$(arg camera)/driver/color_exposure"      type="int"    value="46" />
   <param name="$(arg camera)/driver/color_gain"          type="int"    value="256" />
-  <param name="$(arg camera)/driver/color_sharpness"     type="int"    value="1" />
+  <param name="$(arg camera)/driver/color_sharpness"     type="int"    value="2" />
 
   <!-- Refer to the Wiki http://wiki.ros.org/realsense_camera for list of supported parameters -->
 

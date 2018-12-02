@@ -49,12 +49,14 @@ int OffbController::init() {
   readParam("pid/pitch/output/min", &rp_pid_pitch_out_min, -1.0f);
   readParam("pid/pitch/output/max", &rp_pid_pitch_out_max, +1.0f);
   readParam("pid/pitch/output/ramp", &rp_pid_pitch_out_ramp, 1.0f);
+  readParam("pid/pitch/output/bias", &rp_pid_pitch_out_bias, 0.0f);
   readParam("pid/pitch/p", &rp_pid_pitch_p, 0.0f);
   readParam("pid/pitch/d", &rp_pid_pitch_d, 0.0f);
   readParam("pid/roll/target", &rp_pid_roll_target, 1.0f);
   readParam("pid/roll/output/min", &rp_pid_roll_out_min, -1.0f);
   readParam("pid/roll/output/max", &rp_pid_roll_out_max, +1.0f);
   readParam("pid/roll/output/ramp", &rp_pid_roll_out_ramp, 1.0f);
+  readParam("pid/roll/output/bias", &rp_pid_roll_out_bias, 0.0f);
   readParam("pid/roll/p", &rp_pid_roll_p, 0.0f);
   readParam("pid/roll/d", &rp_pid_roll_d, 0.0f);
   readParam("pid/yaw/target", &rp_pid_yaw_target, 1.0f);
@@ -96,13 +98,13 @@ int OffbController::init() {
 
   pitchPID.conf(
     rp_pid_pitch_p, OFFB_PID_PITCH_I, rp_pid_pitch_d, OFFB_PID_PITCH_F,
-    OFFB_PID_PITCH_DTC, OFFB_PID_PITCH_DK, OFFB_PID_PITCH_BIAS,
+    OFFB_PID_PITCH_DTC, OFFB_PID_PITCH_DK, rp_pid_pitch_out_bias,
     rp_pid_pitch_out_max, rp_pid_pitch_out_min,
     rp_pid_pitch_out_ramp);
 
   rollPID.conf(
     rp_pid_roll_p, OFFB_PID_ROLL_I, rp_pid_roll_d, OFFB_PID_ROLL_F,
-    OFFB_PID_ROLL_DTC, OFFB_PID_ROLL_DK, OFFB_PID_ROLL_BIAS,
+    OFFB_PID_ROLL_DTC, OFFB_PID_ROLL_DK, rp_pid_roll_out_bias,
     rp_pid_roll_out_max, rp_pid_roll_out_min,
     rp_pid_roll_out_ramp);
 
@@ -114,13 +116,13 @@ int OffbController::init() {
 
   ofRollPID.conf(
     rp_pid_of_roll_p, OFFB_PID_ROLL_I, rp_pid_of_roll_d, OFFB_PID_ROLL_F,
-    OFFB_PID_ROLL_DTC, OFFB_PID_ROLL_DK, OFFB_PID_ROLL_BIAS,
+    OFFB_PID_ROLL_DTC, OFFB_PID_ROLL_DK, 0.0f,
     rp_pid_of_roll_out_max, rp_pid_of_roll_out_min,
     rp_pid_of_roll_out_ramp);
 
   ofPitchPID.conf(
     rp_pid_of_pitch_p, OFFB_PID_PITCH_I, rp_pid_of_pitch_d, OFFB_PID_PITCH_F,
-    OFFB_PID_PITCH_DTC, OFFB_PID_PITCH_DK, OFFB_PID_PITCH_BIAS,
+    OFFB_PID_PITCH_DTC, OFFB_PID_PITCH_DK, 0.0f,
     rp_pid_of_pitch_out_max, rp_pid_of_pitch_out_min,
     rp_pid_of_pitch_out_ramp);
 

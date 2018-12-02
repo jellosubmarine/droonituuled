@@ -1,6 +1,6 @@
 #Parameters for the camera node
 
-loop_rate: 25
+loop_rate: 18
 
 # Optical flow
 of:
@@ -9,12 +9,15 @@ of:
 
 frame:
   mask:
-    saturation_thr:  80
+    saturation_thr:  82
+    mask_edges:      1
+    unmasked_x:      640
+    unmasked_y:      480
 
 contour:
   rect:
-    min_size:      2000
-    max_size:      6000
+    min_size:      1300
+    max_size:      9000
     min_ratio:      2.5
     max_ratio:      5.0
     max_angle:     55.0  # in degrees not radians
